@@ -1,3 +1,5 @@
+
+
 # Class hierarchies
 
 There is more to polymorphism than simply abstract data types that can have different concrete implementations. A key concept found in most object-oriented programming languages is classes and class hierarchies. Class hierarchies serve two conceptually different purposes: refinement of object interfaces and code reuse. Neither concept, strictly speaking, requires class hierarchies in R, since R is dynamically typed, unlike programming languages such as C++ or Java where class hierarchies and the static type system are intertwined. Nevertheless, class hierarchies provide a framework for thinking about software design that is immensely useful, also in dynamically typed languages.
@@ -64,41 +66,28 @@ Since the class mechanism implemented this way is essentially working on a per-f
 
 You can use the function `methods` to get a list of all the methods implemented by a class
 
-```{r, echo=FALSE}
-top <- function(stack) UseMethod("top")
-pop <- function(stack) UseMethod("pop")
-push <- function(stack, element) UseMethod("push")
-is_empty <- function(stack) UseMethod("is_empty")
 
-top.default <- function(stack) .NotYetImplemented()
-pop.default <- function(stack) .NotYetImplemented()
-push.default <- function(stack, element) .NotYetImplemented()
-is_empty.default <- function(stack) .NotYetImplemented()
 
-top.vector_stack <- function(stack) stack[1]
-pop.vector_stack <- function(stack) {
-  new_stack <- stack[-1]
-  class(new_stack) <- "vector_stack"
-  new_stack
-}
-push.vector_stack <- function(element, stack) {
-  new_stack <- c(element, stack)
-  class(new_stack) <- "vector_stack"
-  new_stack
-}
-is_empty.vector_stack <- function(stack) length(stack) == 0
-```
-```{r}
+```r
 methods(class = "vector_stack")
+```
+
+```
+## [1] is_empty pop      push     top     
+## see '?methods' for accessing help and source code
 ```
 
 and check if you have everything implemented. You can also use this function to get a list of all classes that implement a given generic function
 
-```{r, echo=FALSE}
-top.vector_stack <- function(stack) stack[1]
-```
-```{r}
+
+
+```r
 methods("top")
+```
+
+```
+## [1] top.default      top.vector_stack
+## see '?methods' for accessing help and source code
 ```
 
 ### Classes as interfaces with refinements

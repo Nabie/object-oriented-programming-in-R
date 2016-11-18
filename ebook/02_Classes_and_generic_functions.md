@@ -1,29 +1,4 @@
-```{r, echo=FALSE, warning=FALSE}
-suppressPackageStartupMessages(library(magrittr, quietly = TRUE))
-suppressPackageStartupMessages(library(pryr, quietly = TRUE))
-suppressPackageStartupMessages(library(microbenchmark, quietly = TRUE))
-suppressPackageStartupMessages(library(purrr, quietly = TRUE))
-suppressPackageStartupMessages(library(ggplot2, quietly = TRUE))
 
-assert <- function(expr, expected) {
-	if (!expr) stop(paste0("ERROR: ", expr))
-}
-
-
-opts_chunk$set(fig.width=4, fig.height=4, 
-               dpi=300, dev="png")
-theme_set(theme_bw() + 
-    theme(axis.text.x = element_text(size = 6),
-          strip.text = element_text(size = 8)))
-
-
-
-options(width = 50, 
-        str = strOptions(vec.len = 3, 
-                         strict.width = "cut"))
-
-set.seed(5)
-```
 
 # Classes and generic functions
 
@@ -53,7 +28,8 @@ In R, the types are implicitly defined, but for a stack we would also define the
 
 Of the five functions defining a stack, one is special. Creating an empty stack does not work as a generic function. When we create a stack, we always need a concrete implementation. But the other four can be defined as generic functions. Defining a generic function is done using the `UseMethod` function, and the four functions can be defined as thus:
 
-```{r}
+
+```r
 top <- function(stack) UseMethod("top")
 pop <- function(stack) UseMethod("pop")
 push <- function(stack, element) UseMethod("push")
@@ -64,7 +40,8 @@ What `UseMethod` does here is tying the functions in the the S3 object oriented 
 
 When defining generic functions you can specify “default” functions as well. These are called when `UseMethod` cannot find a concrete implementation. These are mostly useful when it is possible to actually have some default behaviour that works in most cases, so not all concrete classes need to implement them, but it is a good idea to always implement them, even if all they do is inform you that an actual implementation wasn’t found.
 
-```{r}
+
+```r
 top.default <- function(stack) .NotYetImplemented()
 pop.default <- function(stack) .NotYetImplemented()
 push.default <- function(stack, element) .NotYetImplemented()
@@ -78,7 +55,8 @@ To make concrete implementations of abstract data types we need to use *classes*
 
 We can make a concrete implementation of a stack using a vector.  To define the class we just need to pick a name for it. We can use `vector_stack`. We create such a stack using a function for creating an empty stack, and in this function we set the attribute “class” using the `class<-` modification function.
 
-```{r}
+
+```r
 empty_vector_stack <- function() {
   stack <- vector("numeric")
   class(stack) <- "vector_stack"
@@ -87,15 +65,37 @@ empty_vector_stack <- function() {
 
 stack <- empty_vector_stack()
 stack
+```
+
+```
+## numeric(0)
+## attr(,"class")
+## [1] "vector_stack"
+```
+
+```r
 attributes(stack)
+```
+
+```
+## $class
+## [1] "vector_stack"
+```
+
+```r
 class(stack)
+```
+
+```
+## [1] "vector_stack"
 ```
 
 The empty stack is a numeric vector, just because we need some type to give the empty vector, but pushing other values onto it will just force a type conversion, so we can put other basic types into it. It is limited to basic data types since vectors cannot contain complex data; for that we would need a list. If we need complex data we could easily change the implementation to use a list instead of a vector.
 
 We will push elements by putting them at the front of the vector, pop elements by getting everything except the first element of the vector, and of course get the top of a vector by just indexing the first element. Such an implementation can look like this:
 
-```{r}
+
+```r
 top.vector_stack <- function(stack) stack[1]
 pop.vector_stack <- function(stack) {
   new_stack <- stack[-1]
@@ -118,18 +118,26 @@ This lookup mechanism gives semantic meaning to function names, and you really s
 
 If we call `push` on a vector stack, it will therefore be `push.vector_stack` that will be called instead of `push.default`.
 
-```{r}
+
+```r
 stack <- push(stack, 1)
 stack <- push(stack, 2)
 stack <- push(stack, 3)
 stack
 ```
 
+```
+## [1] 1 2 3
+## attr(,"class")
+## [1] "vector_stack"
+```
+
 In the `push.vector_stack` we explicitly set the class of the concatenated new vector. If we didn’t do this, we would just be creating a vector — the stack-ness of the second argument to `c` does not carry on to the concatenated vector — and we wouldn’t return a stack. By setting the class of the new vector we make sure that we return a stack.
 
 The class isn’t preserved when we remove the first element of the vector either, which is why we also have to explicitly set the class in the `pop.vector_stack` function. Otherwise we would only have a stack the first time we pop an element and after that it would just be a plain vector. By explicitly setting the class we make sure that the function returns a stack that we can use with the generic functions again.
 
-```{r}
+
+```r
 while (!is_empty(stack)) {
   stack <- pop(stack)
 }
@@ -139,7 +147,8 @@ The remaining two functions, `top` and `is_empty` do not return a stack object, 
 
 We can avoid having to explicitly set the class attribute whenever we update it — that is, whenever we return a new value; we never actually modify an object here — by wrapping the class creation code in another function. Such a version could look like this:
 
-```{r}
+
+```r
 make_vector_stack <- function(elements) {
   structure(elements, class = "vector_stack")
 }
@@ -158,7 +167,8 @@ We are of course still setting the class attribute when we create an updated sta
 
 The point of having generic functions is, of course, that we can have different implementations of the abstract operations. For the stack, we can try a different implementation. The vector version has the drawback that each time we return a modified stack we need to create a new vector, which means copying all the elements in the new vector from the old. This makes the operations linear time in the vector size. Using a linked list we can make them constant time operations. Such an implementation can look like this:
 
-```{r}
+
+```r
 make_list_node <- function(head, tail) {
   list(head = head, tail = tail)
 }
@@ -180,13 +190,37 @@ stack <- push(stack, 3)
 stack
 ```
 
+```
+## $elements
+## $elements$head
+## [1] 3
+## 
+## $elements$tail
+## $elements$tail$head
+## [1] 2
+## 
+## $elements$tail$tail
+## $elements$tail$tail$head
+## [1] 1
+## 
+## $elements$tail$tail$tail
+## NULL
+## 
+## 
+## 
+## 
+## attr(,"class")
+## [1] "list_stack"
+```
+
 Normally, when working with lists, we would use `NULL` as the base case to terminate a list. We cannot just wrap a list and use `NULL` this way when we need to associate a class with the element. You cannot set the class of `NULL`. So instead we wrap the actual list inside another list where we set the class attribute. The real data is in the `elements` of this list, but except for having to use this list element of the object we just work with the list representation as we normally would with linked lists.
 
 We now have two different implementations of the stack interface, but — and this is the whole point of having generic functions — code that uses a stack does not need to know which implementation it is operating on, as long as it only access stacks through the generic interface.
 
 We can see this in action in the small function below that reverses a sequence of elements by first pushing them all onto a stack and then pop’ing them off again.
 
-```{r}
+
+```r
 stack_reverse <- function(empty, elements) {
   stack <- empty
   for (element in elements) {
@@ -201,50 +235,67 @@ stack_reverse <- function(empty, elements) {
 }
 
 stack_reverse(empty_vector_stack(), 1:5)
+```
+
+```
+## [1] 5 4 3 2 1
+```
+
+```r
 stack_reverse(empty_list_stack(), 1:5)
+```
+
+```
+## [1] 5 4 3 2 1
 ```
 
 Since the `stack_reverse` function only refers to the concrete stacks through the abstract interface we can give it either a vector stack or a list stack and it can do the same operations on both. As long as the concrete data structures all implement the abstract interface correctly then code that only uses the generic functions will be able to work on any implementation.
 
 One single concrete implementation is rarely superior in all cases, so it makes sense that we are able to combine algorithms working on abstract data types with concrete implementations depending on the concrete problem we need to solve. For the two stack implementations they generally work equally well, but as discussed above, the stack implementation has a worst-case quadratic running time while the list implementation has a linear running time. For large stacks, we would thus expect the list implementation to be the best choice, but for small stacks there is more overhead in manipulating the list implementation the way we do — having to do with looking up variable names and linking lists and such — so for short stacks the vector implementation is faster.
 
-```{r microbenchmark_stacks, cache=TRUE}
+
+```r
 library(microbenchmark)
 microbenchmark(stack_reverse(empty_vector_stack(), 1:10),
                stack_reverse(empty_list_stack(), 1:10))
+```
+
+```
+## Unit: microseconds
+##                                       expr
+##  stack_reverse(empty_vector_stack(), 1:10)
+##    stack_reverse(empty_list_stack(), 1:10)
+##      min       lq     mean   median       uq
+##  203.807 220.3595 249.1687 234.4750 258.8270
+##  235.304 253.1885 279.5662 264.8585 279.7165
+##       max neval cld
+##   977.800   100  a 
+##  1020.264   100   b
+```
+
+```r
 microbenchmark(stack_reverse(empty_vector_stack(), 1:1000),
                stack_reverse(empty_list_stack(), 1:1000))
 ```
 
+```
+## Unit: milliseconds
+##                                         expr
+##  stack_reverse(empty_vector_stack(), 1:1000)
+##    stack_reverse(empty_list_stack(), 1:1000)
+##       min       lq     mean   median       uq
+##  29.14557 32.76035 37.67371 34.30566 36.65295
+##  23.94298 24.75708 26.74601 25.57205 26.72429
+##        max neval cld
+##  117.37179   100   b
+##   93.35432   100  a
+```
+
 Plotting the time usage for various length of stacks makes it even more evident that, as the stack gets longer, the list implementation gets relatively faster.
 
-```{r performance_plotting_stacks, cache=TRUE, echo=FALSE}
-library(tibble)
-get_time <- function(empty, n) 
-  microbenchmark(stack_reverse(empty, 1:n))$time
-time_stacks <- function(n) {
-  rbind(tibble(Implementation = "Vector", n = n, 
-               Time = get_time(empty_vector_stack(), n)),
-        tibble(Implementation = "List", n = n, 
-               Time = get_time(empty_list_stack(), n)))
-  
-}
-times <- do.call(rbind, 
-                 lapply(seq(100, 5000, length.out = 10), 
-                        time_stacks))
-```
 
-```{r, fig.cap="Time usage of reversal with two different stacks.", echo=FALSE}
-library(ggplot2)
-ggplot(times) + 
-  geom_boxplot(aes(x = as.factor(n), 
-                   y = Time, 
-                   fill = Implementation)) +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank()) +
-  theme(legend.position = "bottom")
-```
+
+![Time usage of reversal with two different stacks.](figure/unnamed-chunk-11-1.png)
 
 Only for very short stacks would the vector implementation be preferable — the quadratic versus linear running time kicks in for very small $n$ — but in general different implementations will be preferable for different usages, and by writing code that is polymorphic we make sure that we can change the implementation of a data structure without having to change the algorithms using it.
 
@@ -263,7 +314,8 @@ It can be very tempting to break these rules in the heat of programming. Using a
 
 More often, you will want to access the details of a concrete implementation. Imagine, for example, that you want to pop elements until you see a specific one, but *only* if that element is on the stack. If we are used to working with the vector implementation of the stack, then it would be natural to write a function like this:
 
-```{r}
+
+```r
 pop_until <- function(stack, element) {
   if (element %in% stack) {
     while (top(stack) != element) stack <- pop(stack)
@@ -276,8 +328,32 @@ vector_stack <- empty_vector_stack() %>%
   push(1) %>%
   push(2) %>%
   push(3) %T>% print
+```
+
+```
+## [1] 3 2 1
+## attr(,"class")
+## [1] "vector_stack"
+```
+
+```r
 pop_until(vector_stack, 1)
+```
+
+```
+## [1] 1
+## attr(,"class")
+## [1] "vector_stack"
+```
+
+```r
 pop_until(vector_stack, 5)
+```
+
+```
+## [1] 3 2 1
+## attr(,"class")
+## [1] "vector_stack"
 ```
 
 Here we use the `%in%` function to test if the element is on the stack (and we use the `magrittr` pipe operator to create a stack for our test). This works fine, as long as the stack is a vector stack, but it will *not* work if the stack is implemented as a list. You won’t get an error message, the `%in%` test will just always return `FALSE`, so if you replace the stack implementation you have incorrect code that doesn’t even inform you that it isn’t working.
@@ -294,7 +370,8 @@ pop_until(list_stack, 1)
 
 If you write an algorithm that operates on a polymorphic object, stick to the interface it has if at all possible. For the `pop_until` function we can easily implement it using just the stack interface.
 
-```{r}
+
+```r
 pop_until <- function(stack, element) {
   s <- stack
   while (!is_empty(s) && top(s) != element) s <- pop(s)
@@ -304,7 +381,8 @@ pop_until <- function(stack, element) {
 
 If you cannot achieve what you need using the interface, you should instead extend it. You can always write new generic functions that work on a class.
 
-```{r}
+
+```r
 contains <- function(stack, element) UseMethod("contains")
 contains.default <- function(stack, element) .NotYetImplemented()
 contains.vector_stack <- function(stack, element) element %in% stack
@@ -346,7 +424,8 @@ We can easily implement our own function for doing this, however, and we can cal
 
 A straightforward implementation of merge sort could look like this:
 
-```{r}
+
+```r
 merge_lists <- function(x, y) {
   if (length(x) == 0) return(y)
   if (length(y) == 0) return(x)
@@ -371,7 +450,8 @@ sort_list <- function(x) {
 
 It gets the job done, but the merge function is quadratic in running time since it copies lists when it subscripts like `x[-1]` and `y[-1]` and when it combines the results in the recursive calls. We can make a slightly more complicated function that does the merging in linear time using a iterative approach rather than a recursive:
 
-```{r}
+
+```r
 merge_lists <- function(x, y) {
   if (length(x) == 0) return(y)
   if (length(y) == 0) return(x)
@@ -405,7 +485,8 @@ We are still copying in the recursive calls of the sorting function, but we are 
 
 With this function we can sort lists of elements where `` `<` `` can be used to determine if one element is less than another. The builtin `` `<` `` function, however, doesn’t necessarily work on your own classes.
 
-```{r}
+
+```r
 make_tuple <- function(x, y) {
   result <- c(x,y)
   class(result) <- "tuple"
@@ -418,9 +499,41 @@ x <- list(make_tuple(1,2),
 sort_list(x)
 ```
 
+```
+## Warning in if (x[[i]] < y[[j]]) {: the condition
+## has length > 1 and only the first element will be
+## used
+
+## Warning in if (x[[i]] < y[[j]]) {: the condition
+## has length > 1 and only the first element will be
+## used
+
+## Warning in if (x[[i]] < y[[j]]) {: the condition
+## has length > 1 and only the first element will be
+## used
+```
+
+```
+## [[1]]
+## [1] 1 1
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[2]]
+## [1] 1 2
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[3]]
+## [1] 2 0
+## attr(,"class")
+## [1] "tuple"
+```
+
 There are several ways we can fix this. One option is to define a generic function for comparison, we could call it `less`, and then use that in the merge function.
 
-```{r}
+
+```r
 merge_lists <- function(x, y) {
   if (length(x) == 0) return(y)
   if (length(y) == 0) return(x)
@@ -456,43 +569,33 @@ less.tuple <- function(x, y) x[1] < y[1] || x[2] < y[2]
 sort_list(x)
 ```
 
+```
+## [[1]]
+## [1] 1 1
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[2]]
+## [1] 1 2
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[3]]
+## [1] 2 0
+## attr(,"class")
+## [1] "tuple"
+```
+
 We would need to define concrete implementations of `less` for all types we wish to short, though. Alternatively, we can tell R how to handle `` `<` `` for our own types, and we will see how to in a later chapter. With that approach, we will get sorting functionality for all objects that can be compared this way. A third possibility is to make `less` a parameter of the sorting function:
 
-```{r, echo=FALSE}
-merge_lists <- function(x, y, less) {
-  if (length(x) == 0) return(y)
-  if (length(y) == 0) return(x)
-  
-  i <- j <- k <- 1
-  n <- length(x) + length(y)
-  result <- vector("list", length = n)  
-  
-  while (i <= length(x) && j <= length(y)) {
-    if (less(x[[i]], y[[j]])) {
-      result[[k]] <- x[[i]]
-      i <- i + 1
-    } else {
-      result[[k]] <- y[[j]]
-      j <- j + 1
-    }
-    k <- k + 1
-  }
-  
-  if (i > length(x)) {
-    result[k:n] <- y[j:length(y)]
-  } else {
-    result[k:n] <- x[i:length(x)]
-  }
-  
-  result
-}
-```
+
 ```r
 merge_lists <- function(x, y, less) {
   # Same function body as before
 }
 ```
-```{r}
+
+```r
 sort_list <- function(x, less = `<`) {
   
   if (length(x) <= 1) return(x)
@@ -509,9 +612,32 @@ sort_list <- function(x, less = `<`) {
 }
 
 unlist(sort_list(as.list(sample(1:5))))
+```
 
+```
+## [1] 1 2 3 4 5
+```
+
+```r
 tuple_less <- function(x, y) x[1] < y[1] || x[2] < y[2]
 sort_list(x, tuple_less)
+```
+
+```
+## [[1]]
+## [1] 1 1
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[2]]
+## [1] 1 2
+## attr(,"class")
+## [1] "tuple"
+## 
+## [[3]]
+## [1] 2 0
+## attr(,"class")
+## [1] "tuple"
 ```
 
 We make the default `less` function `` `<` `` but can provide another for types where this comparison function doesn’t work.
@@ -532,11 +658,18 @@ First of all, it doesn’t actually work as a function normally does. It looks l
 
 First of all, you can pass local variables along to concrete implementations if you assign them before you call `UseMethod`. Let’s consider a simple case:
 
-```{r}
+
+```r
 foo <- function(object) UseMethod("foo")
 foo.numeric <- function(object) object
 foo(4)
+```
 
+```
+## [1] 4
+```
+
+```r
 bar <- function(object) {
   x <- 2
   UseMethod("bar")
@@ -545,16 +678,25 @@ bar.numeric <- function(object) x + object
 bar(4)
 ```
 
+```
+## [1] 6
+```
+
 Here the `foo` function uses the pattern we saw earlier. It just calls `UseMethod`. We then define a concrete function to be called if `foo` is invoked on a number. Numbers have classes, and that class is `numeric`. (Technically, there is more to numbers than this class, but for now we don’t need to worry about that). Nothing strange is going on with `foo`.
 
 With `bar`, however, we assign a local variable before we invoke `UseMethod`. This variable, `x`, is visible when `bar.numeric` is called. With a normal function call, you have to take steps to get access to the calling scope, so here `UseMethod` does not behave as a normal function.
 
 In the call to `UseMethod` it doesn’t behave like a normal function either. You cannot use `UseMethod` as part of an expression.
 
-```{r}
+
+```r
 baz <- function(object) UseMethod("baz") + 2
 baz.numeric <- function(object) object
 baz(4)
+```
+
+```
+## [1] 4
 ```
 
 When `UseMethod` is invoked, the concrete function takes over completely, and the call to `UseMethod` never returns. Any expression you put `UseMethod` in is not evaluated because of this, and any code you might put after the `UseMethod` call is never evaluated.
