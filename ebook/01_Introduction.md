@@ -1,0 +1,41 @@
+
+
+
+# Introduction
+
+Welcome to the *Advanced Statistical Programming in R* series and this book, *Object Oriented Programming in R*. I wrote the series, and this book, to have teaching material beyond the typical introductory level most text books on R have. It covers some of the more advanced techniques used in R programming such as fully exploiting functional programming, writing meta-programs (programming the actual language structures), and writing domain specific languages to embed in R.
+
+## About the series
+
+The *Advanced Statistical Programming in R* series is intended to consist of short single-topic books where each book can be used alone for teaching or learning R. That said, there will, of course, be some dependencies in topics, if not in content, among the books. For instance, functional programming is essential to understand for any serious R programming and the first book in the series covers that. Reading the other books without understanding functional programming will not be fruitful. However, if you are already familiar with functional programming, then you can safely skip the first book.
+
+For each book, I will make clear what I think the prerequisites for reading the book are, but for the entire series I will expect you to already be familiar with programming and the basic R you will see in any introductory book. None of the books will give you a tutorial introduction to the R programming language.
+
+If you have used R before for data analysis and are familiar with writing expressions and functions, and want to take it further and write more advanced R code, then the series is for you.
+
+
+## About this book
+
+This book is intended to give an introduction to objects and classes in R and how object oriented programming is done in R. Object oriented programming is based on the concept of *objects* and on designing programs in terms of operations one can do on objects and how objects communicates with other objects.
+
+This is often thought of in terms of objects with states, where operations on objects changes the object state. In R, data is immutable, so you don’t write code where you change an object’s state. Rather, you work with objects as values and operations on objects create new objects when you need new “state”.
+
+Objects and classes in R is more like abstract data structures. You have values and associated operations you can do on these values. Such abstract data structures are implemented differently in different programming languages. Most object oriented languages implements them using classes and class hierarchies while many functional languages define them using some kind of type specifications that define which functions can be applied to objects.
+
+R is dynamically typed, so you do not specify abstract data types through a type specification. The operations you can do on objects is simply determined by which functions you can call on the objects. You can still think of this as specifications of abstract data structures, however, they are just implicitly defined.
+
+Abstract data structures can be implemented in different ways, that is what makes them *abstract*, and the way to separate implementation from interface is through *polymorphic* or *generic* functions, a construction founded on object oriented programming. Generic functions are implemented through a *class* mechanism, also derived from object oriented programming. The functions implemented by a class determines the interface of objects in the class, and by constructing hierarchies of classes you can share implementation of common functions between classes.
+
+Object oriented programming was not built in to the R language initially but was added later, and unfortunately more than one object oriented system was added. There are actually three different ways to implement object oriented constructions in R, each with different pros and cons, and these three systems do not operate well together. I will cover all three in this book, but put most emphasis on the S3 system which is the basis of the so-called “tidy verse”, the packages such as `tidyr`, `dplyr`, `ggplot2`, etc. that forms the basis of most data analysis pipelines these days.
+
+When developing your own software, I will strongly recommend that you stick to one object oriented system instead of mixing them, but which is a matter of taste and which other packages your code is intended to work with.
+
+Most books I have read on object-oriented programming, and the classes I have taken on object-oriented programming, have centred on object-oriented modelling and software design. There, the focus is on how object-orientation can be used to structure how you think about your software and how the software can reflect physical or conceptual aspects of the world that you try to model in your software. If, for instance, you implement software for dealing with accountance you would model accounts as objects with operations for inserting and withdrawing money. You would try to, as much as possible, mapping concepts from the problem domain to software as directly as possible. This is a powerful approach to designing your software, but there are always aspects of software that does not readily fit into such modelling. Especially when it comes to algorithmic programming and design of data structures. Search trees and sorting algorithms, for instance, are usually not reflecting anything concrete in a problem domain.
+
+Object-oriented programming, however, is also a very powerful tool to use when designing algorithms and data structures. The way I was taught programming, algorithms and data structures were covered in separate classes from where I was taught object-orientation. Combining object-orientation and algorithmic programming was something I had to teach myself by writing software. I think this was a pity since the two really fit together well.
+
+In this book I will try to cover object-orientation both as a modelling technique for designing software but also as a tool for developing reusable algorithmic software. Polymorphism, a cornerstone of object-oriented programming, lends itself readily to developing flexible algorithms and to combining different concrete implementations of abstract data types to tailor abstract algorithms to concrete problems. A main use of R is machine learning and data science where efficient, and flexible, algorithms are more important than modelling a problem domain, so much of the book will focus on those aspects of object-oriented programming.
+
+
+To read this book you need to know the fundamentals of R programming: how to manipulate data and how to write functions. We will not see particular complex R programming, so you do not need a fundamental knowledge of how to do functional programming in R, but should you want to learn how to, I suggest reading the first book in this series which is exactly on that. You should be able to follow the book without having read it, though.
+
