@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "\nmerge_lists <- function(x, y) {\n  if (length(x) == 0) return(y)\n  if (length(y) == 0) return(x)\n  \n  if (x[[1]] < y[[1]]) {\n    c(x[1], merge_lists(x[-1], y))\n  } else {\n    c(y[1], merge_lists(x, y[-1]))\n  }\n}\n\nsort_list <- function(x) {\n  if (length(x) <= 1) return(x)\n  \n  start <- 1\n  end <- length(x)\n  middle <- end %/% 2\n  \n  merge_lists(sort_list(x[start:middle]), sort_list(x[(middle+1):end]))\n}\n\nunlist(sort_list(as.list(1)))\nunlist(sort_list(as.list(sample(1:2))))\nunlist(sort_list(as.list(sample(1:3))))\nunlist(sort_list(as.list(sample(1:4))))\nunlist(sort_list(as.list(sample(1:5))))\n\nmerge_lists <- function(x, y) {\n  if (length(x) == 0) return(y)\n  if (length(y) == 0) return(x)\n\n  i <- j <- k <- 1\n  n <- length(x) + length(y)\n  result <- vector(\"list\", length = n)  \n\n  while (i <= length(x) && j <= length(y)) {\n    if (x[[i]] < y[[j]]) {\n      result[[k]] <- x[[i]]\n      i <- i + 1\n    } else {\n      result[[k]] <- y[[j]]\n      j <- j + 1\n    }\n    k <- k + 1\n  }\n  \n  if (i > length(x)) {\n    result[k:n] <- y[j:length(y)]\n  } else {\n    result[k:n] <- x[i:length(x)]\n  }\n  \n  result\n}\n\nunlist(sort_list(as.list(1)))\nunlist(sort_list(as.list(sample(1:2))))\nunlist(sort_list(as.list(sample(1:3))))\nunlist(sort_list(as.list(sample(1:4))))\nunlist(sort_list(as.list(sample(1:5))))\n\nsort_list <- function(x) {\n\n  if (length(x) <= 1) return(x)\n  \n  result <- vector(\"list\", length = length(x))\n  \n  start <- 1\n  end <- length(x)\n  middle <- end %/% 2\n  \n  merge_lists(sort_list(x[start:middle]), sort_list(x[(middle+1):end]))\n}\n\n\nmake_tuple <- function(x, y) {\n  result <- c(x,y)\n  class(result) <- \"tuple\"\n  result\n}\n\nx <- list(make_tuple(1,2), make_tuple(1,1), make_tuple(2,0))\nsort_list(x)\n\n\nmerge_lists <- function(x, y) {\n  if (length(x) == 0) return(y)\n  if (length(y) == 0) return(x)\n  \n  i <- j <- k <- 1\n  n <- length(x) + length(y)\n  result <- vector(\"list\", length = n)  \n  \n  while (i <= length(x) && j <= length(y)) {\n    if (less(x[[i]], y[[j]])) {\n      result[[k]] <- x[[i]]\n      i <- i + 1\n    } else {\n      result[[k]] <- y[[j]]\n      j <- j + 1\n    }\n    k <- k + 1\n  }\n  \n  if (i > length(x)) {\n    result[k:n] <- y[j:length(y)]\n  } else {\n    result[k:n] <- x[i:length(x)]\n  }\n  \n  result\n}\n\nless <- function(x, y) UseMethod(\"less\")\nless.numeric <- function(x, y) x < y\nless.tuple <- function(x, y) x[1] < y[1] || x[2] < y[2]\n\nsort_list(x)\n\n\nmerge_lists <- function(x, y, less) {\n  if (length(x) == 0) return(y)\n  if (length(y) == 0) return(x)\n  \n  i <- j <- k <- 1\n  n <- length(x) + length(y)\n  result <- vector(\"list\", length = n)  \n  \n  while (i <= length(x) && j <= length(y)) {\n    if (less(x[[i]], y[[j]])) {\n      result[[k]] <- x[[i]]\n      i <- i + 1\n    } else {\n      result[[k]] <- y[[j]]\n      j <- j + 1\n    }\n    k <- k + 1\n  }\n  \n  if (i > length(x)) {\n    result[k:n] <- y[j:length(y)]\n  } else {\n    result[k:n] <- x[i:length(x)]\n  }\n  \n  result\n}\n\nsort_list <- function(x, less = `<`) {\n  \n  if (length(x) <= 1) return(x)\n  \n  result <- vector(\"list\", length = length(x))\n  \n  start <- 1\n  end <- length(x)\n  middle <- end %/% 2\n  \n  merge_lists(sort_list(x[start:middle], less), \n              sort_list(x[(middle+1):end], less), \n              less)\n}\n\nunlist(sort_list(as.list(sample(1:5))))\n\ntuple_less <- function(x, y) x[1] < y[1] || x[2] < y[2]\nsort_list(x, tuple_less)\n",
+    "created" : 1478958414616.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2971992391",
+    "id" : "8AEE42F5",
+    "lastKnownWriteTime" : 1478965073,
+    "last_content_update" : 1478965073657,
+    "path" : "~/Dropbox/Misc. writing/Books/Advanced Statistical Programming in R/Object Oriented Programming in R/R/sort.R",
+    "project_path" : "sort.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

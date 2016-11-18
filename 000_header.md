@@ -1,0 +1,42 @@
+---
+title: Object-Oriented Programming in R
+series: Advanced Statistical Programming in R
+author: Thomas Mailund
+---
+
+```{r, echo=FALSE, warning=FALSE}
+suppressPackageStartupMessages(library(magrittr, quietly = TRUE))
+suppressPackageStartupMessages(library(pryr, quietly = TRUE))
+suppressPackageStartupMessages(library(microbenchmark, quietly = TRUE))
+suppressPackageStartupMessages(library(purrr, quietly = TRUE))
+suppressPackageStartupMessages(library(ggplot2, quietly = TRUE))
+
+assert <- function(expr, expected) {
+	if (!expr) stop(paste0("ERROR: ", expr))
+}
+
+
+#ifdef PDF
+opts_chunk$set(fig.width=4, fig.height=4, 
+               fig.pos="t", dev="pdf")
+theme_set(theme_bw() + 
+    theme(axis.text.x = element_text(size = 6),
+          strip.text = element_text(size = 8)))
+
+#else
+opts_chunk$set(fig.width=4, fig.height=4, 
+               dpi=300, dev="png")
+theme_set(theme_bw() + 
+    theme(axis.text.x = element_text(size = 6),
+          strip.text = element_text(size = 8)))
+
+#endif
+
+
+options(width = 50, 
+        str = strOptions(vec.len = 3, 
+                         strict.width = "cut"))
+
+set.seed(5)
+```
+
