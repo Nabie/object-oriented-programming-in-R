@@ -38,6 +38,7 @@ We generally think about class hierarchies as part of “is-a” relationships. 
 
 The closest we get to interfaces and implementations is *abstract classes* and *concrete classes*. An abstract class is essentially exactly an interface. It is nothing more than a description of what you can do with objects of this class; there is no implementation associated with it. Concrete classes, on the other hand, have implementations for all the functions you can call on objects of the given class. Quite often, though, classes implement some but not all the functions their interface describes, so the distinction is not that clean in practise.
 
+
 ### Implementing abstract and concrete classes in R
 
 We already saw, in the previous chapter, how the attribute `class` is used to determine which version of a generic function is called for a given object. This approach for dispatching generic functions is the S3 system’s way of implementing classes, but in some sense only handles concrete implementations of abstract functions. Having a generic method `foo`
@@ -58,7 +59,50 @@ If we think of interfaces as a set of abstract functions, then considering these
 
 Since the class mechanism implemented this way is essentially working on a per-function level — we have generic functions and implementations of these that are dispatched based on their name — classes and their relationships can be a very messy affair in R. You can alleviate this by thinking about your software design in a more structured way than the language requires. Design your software with classes in mind, implement abstract classes by defining a set of generic functions — you can use comments to group them together and to document that these constitute an interface — and make sure that when you define a concrete class implementing an interface that you don’t forget about any of the functions in the interface. You might not implement them all, sometimes there are good reasons to and sometimes you are just being pragmatic and not implementing something that might be difficult to implement but that you don’t need yet, but make sure that this is a conscious choice and that you haven’t simply forgotten a function.
 
+You can use the function `methods` to get a list of all the methods implemented by a class
+
+```{r, echo=FALSE}
+top <- function(stack) UseMethod("top")
+pop <- function(stack) UseMethod("pop")
+push <- function(stack, element) UseMethod("push")
+is_empty <- function(stack) UseMethod("is_empty")
+
+top.default <- function(stack) .NotYetImplemented()
+pop.default <- function(stack) .NotYetImplemented()
+push.default <- function(stack, element) .NotYetImplemented()
+is_empty.default <- function(stack) .NotYetImplemented()
+
+top.vector_stack <- function(stack) stack[1]
+pop.vector_stack <- function(stack) {
+  new_stack <- stack[-1]
+  class(new_stack) <- "vector_stack"
+  new_stack
+}
+push.vector_stack <- function(element, stack) {
+  new_stack <- c(element, stack)
+  class(new_stack) <- "vector_stack"
+  new_stack
+}
+is_empty.vector_stack <- function(stack) length(stack) == 0
+```
+```{r}
+methods(class = "vector_stack")
+```
+
+and check if you have everything implemented. You can also use this function to get a list of all classes that implement a given generic function
+
+```{r, echo=FALSE}
+~~ top.vector_stack <- function(stack) stack[1]
+```
+```{r}
+methods("top")
+```
+
 ### Classes as interfaces with refinements
+
+The “is-a” relationship underlying a class hierarchy is more flexible than just having abstract classes and implementations of such. It provides us with both a way of modelling that some objects really are of different but related classes and it provides us with a mechanism for thinking about interfaces as specialisations of other interfaces.
+
+Let us consider, for an example, an application where we operate on some graphical object -- perhaps as part of a new visualisation package.
 
 
 
