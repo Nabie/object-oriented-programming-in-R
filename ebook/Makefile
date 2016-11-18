@@ -19,5 +19,5 @@ book.epub: $(EPUB_CHAPTERS)
 	../runknitr.sh $<
 
 %.Rmd :: ../chapters/%.md
-	cat ../chapters/000_knitr_header.Rmd > $@
+	cat ../chapters/000_knitr_header.Rmd | gpp -DEPUB > $@
 	cat $< | gpp -DEPUB >> $@

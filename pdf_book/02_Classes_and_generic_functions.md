@@ -266,11 +266,11 @@ microbenchmark(stack_reverse(empty_vector_stack(), 1:10),
 ##  stack_reverse(empty_vector_stack(), 1:10)
 ##    stack_reverse(empty_list_stack(), 1:10)
 ##      min       lq     mean   median       uq
-##  193.472 209.8715 239.4991 220.3810 256.0085
-##  228.481 244.3025 283.5237 260.5345 294.0780
+##  195.787 217.2255 245.5698 229.8335 252.4785
+##  235.270 257.0180 283.9289 271.5655 289.5300
 ##       max neval cld
-##   967.287   100  a 
-##  1102.683   100   b
+##   965.714   100  a 
+##  1174.888   100   b
 ```
 
 ```r
@@ -284,18 +284,18 @@ microbenchmark(stack_reverse(empty_vector_stack(), 1:1000),
 ##  stack_reverse(empty_vector_stack(), 1:1000)
 ##    stack_reverse(empty_list_stack(), 1:1000)
 ##       min       lq     mean   median       uq
-##  28.73972 30.71064 35.38091 32.13762 33.71595
-##  23.43889 23.95020 24.98855 24.91910 25.70340
+##  28.22786 32.30359 37.77813 34.25044 36.49355
+##  23.38964 24.40046 26.14922 25.47550 26.65488
 ##        max neval cld
-##  112.91196   100   b
-##   27.83289   100  a
+##  124.57810   100   b
+##   61.01179   100  a
 ```
 
 Plotting the time usage for various length of stacks makes it even more evident that, as the stack gets longer, the list implementation gets relatively faster.
 
 
 
-![Time usage of reversal with two different stacks.](figure/unnamed-chunk-11-1.png)
+![Time usage of reversal with two different stacks.](figure/unnamed-chunk-11-1.pdf)
 
 Only for very short stacks would the vector implementation be preferable — the quadratic versus linear running time kicks in for very small $n$ — but in general different implementations will be preferable for different usages, and by writing code that is polymorphic we make sure that we can change the implementation of a data structure without having to change the algorithms using it.
 

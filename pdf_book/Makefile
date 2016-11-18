@@ -18,5 +18,5 @@ book.pdf: $(PDF_CHAPTERS)
 	../runknitr.sh $<
 
 %.Rmd :: ../chapters/%.md
-	cat ../chapters/000_knitr_header.Rmd > $@
+	cat ../chapters/000_knitr_header.Rmd | gpp -DPDF > $@
 	cat $< | gpp -DPDF >> $@

@@ -24,8 +24,6 @@ If we go back to thinking about interfaces, we can say that a class implements a
 
 This obviously maps directly to generic functions. If, whenever we think *abstract function*, we map that to a *generic function* — one that simply calls `UseMethod` — and whenever we think *concrete function* we think implementation of a generic function — a function with a “.” in its name — then we have an almost automatic way of mapping the concepts of interfaces and implementations into code.
 
-
-
 Since R doesn’t do any static type checking, there is very little you can do to guarantee that a class you write this way actually implements a given interface. There is nothing in generic functions that explicitly binds them together as an interface, so for any class you decide to implement you can implement an arbitrary subset of generic functions. Interfaces and implementations are design concepts and you can map the design into R code very easily, but R does not enforce that your code matches your design.
 
 ### Abstract and concrete classes
@@ -39,6 +37,11 @@ Objects have classes, and classes determine what you can do with objects, but cl
 We generally think about class hierarchies as part of “is-a” relationships. A vector implementation of a stack “is-a” stack. So is a list-based implementation. If you have an object of a more specialised class you should also be able to treat it as an object of a more abstract class. If you have a vector-stack you can treat it as a stack because its class is a vector stack class and that is a special case of the stack class.
 
 The closest we get to interfaces and implementations is *abstract classes* and *concrete classes*. An abstract class is essentially exactly an interface. It is nothing more than a description of what you can do with objects of this class; there is no implementation associated with it. Concrete classes, on the other hand, have implementations for all the functions you can call on objects of the given class. Quite often, though, classes implement some but not all the functions their interface describes, so the distinction is not that clean in practise.
+
+We often show classes and their relationships in diagrams as that shown in +@fig:stack-hierarchy. Here *Stack* is shown in cursive to indicate that it is an abstract class, below the class name is listed the methods you can call on the class, and errors from one class to another indicates that one class is derived from another. Here we see that vector and list stacks, here called *VectorStack* and *ListStack* are derived from *Stack*.
+
+![Class hierarchy for stacks.](figures/Stack-class-hierarchy){#fig:stack-hierarchy}
+
 
 
 ### Implementing abstract and concrete classes in R
@@ -77,9 +80,6 @@ methods(class = "vector_stack")
 and check if you have everything implemented. You can also use this function to get a list of all classes that implement a given generic function
 
 
-```
-## Error in ~~top.vector_stack <- function(stack) stack[1]: could not find function "~<-"
-```
 
 ```r
 methods("top")
