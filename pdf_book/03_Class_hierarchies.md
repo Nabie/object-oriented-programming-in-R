@@ -42,7 +42,7 @@ We often show classes and their relationships in diagrams as that shown in +@fig
 
 ![Class hierarchy for stacks.](figures/Stack-class-hierarchy){#fig:stack-hierarchy}
 
-
+The two concrete classes only implement the methods also listed in the abstract class, and because of this we won’t always list the methods again in the derived classes. It is to be understood that any method implemented in a more abstract class will also be implemented in more derived classes.
 
 ### Implementing abstract and concrete classes in R
 
@@ -86,15 +86,108 @@ methods("top")
 ```
 
 ```
-## [1] top.default      top.vector_stack
+## [1] top.default      top.list_stack  
+## [3] top.vector_stack
 ## see '?methods' for accessing help and source code
 ```
 
-### Classes as interfaces with refinements
+### Another example: graphical objects
 
 The “is-a” relationship underlying a class hierarchy is more flexible than just having abstract classes and implementations of such. It provides us with both a way of modelling that some objects really are of different but related classes and it provides us with a mechanism for thinking about interfaces as specialisations of other interfaces.
 
-Let us consider, for an example, an application where we operate on some graphical object -- perhaps as part of a new visualisation package.
+Let us consider, for an example, an application where we operate on some graphical object -- perhaps as part of a new visualisation package. The most basic class of this application is the *GraphicalObject* whose objects you can `draw`. Being able to draw objects is the most basic operation we need for graphical objects. Graphical objects also have a “bounding box” — a rectangle that tells us how large the shape is; something we might need when drawing objects.
+
+This class is abstract, not just because we are defining and interface so we can have different implementations, like with did with the stack, but because it doesn’t really make sense to *have* a graphical interface at this abstract level. A concrete class that does make sense to have objects of is *Point* which is a graphical object representing a single point. Other classes could be *Circle* and *Rectangle*. 
+
+For dealing with more than one graphical object, in an interface that makes that easy, we also have a class, *Composite*, that captures a collection of graphical objects. 
+
+**FIXME: PUT FIGURE HERE**
+
+Treating a collection of objects as an object of the same class as its components is a so-called *design pattern* and it makes it easier to deal with complex figures in this application. We can group together graphical objects in a hierarchy — similar to how you would group objects in a drawing tool — and we would not need to explicitly check in our code if we are working on a single object or a collection of objects. A collection of objects is also a graphical object and we can just treat it as such.
+
+Implementing this class hierarchy is fairly straight-forward. The abstract class *GraphicalObject* is not explicitly represented, but we need its methods as generic functions.
+
+
+```r
+draw <- function(object) UseMethod("draw")
+bounding_box <- function(object) UseMethod("bounding_box")
+```
+
+When constructing graphical objects we need to set their class, and these could be the constructors for the concrete classes:
+
+
+```r
+point <- function(x, y) {
+  object <- c(x, y)
+  class(object) <- "point"
+  names(object) <- c("x", "y")
+  object
+}
+
+rectangle <- function(x1, y1, x2, y2) {
+  object <- c(x1, y1, x2, y2)
+  class(object) <- "rectangle"
+  names(object) <- c("x1", "y1", "x2", "y2")
+  object
+}
+
+circle <- function(x, y, r) {
+  object <- c(x, y, r)
+  class(object) <- "circle"
+  names(object) <- c("x", "y", "r")
+  object
+}
+
+composite <- function(...) {
+  object <- list(...)
+  class(object) <- "composite"
+  object
+}
+```
+
+For the `draw` methods we can just use basic graphics functions:
+
+
+```r
+draw.point <- function(object) {
+  points(object["x"], object["y"])
+}
+
+draw.rectangle <- function(object) {
+  rect(object["x1"], object["y1"], object["x2"], object["y2"])
+}
+
+draw.circle <- function(object) {
+  plotrix::draw.circle(object["x"], object["y"], object["r"])
+}
+
+draw.composite <- function(object) {
+  invisible(Map(draw, object))
+}
+```
+
+except for the circles where we use the `draw.circle` function from the `plotrix` package for convenience. For the collection class we just call `draw` on all of a collection's components.
+
+With these functions we can construct plots of graphical elements, see +@fig:plotting-shapes-1.
+
+
+```r
+plot(c(0, 10), c(0, 10), type = 'n', axes = FALSE, xlab = '', ylab = '')
+draw(point(5,5))
+draw(rectangle(2.5, 2.5, 7.5, 7.5))
+draw(circle(5, 5, 4))
+
+corners <- composite(point(2.5, 2.5), point(2.5, 7.5),
+                     point(7.5, 2.5), point(7.5, 7.5))
+draw(corners)
+```
+
+![Plot of graphical elements.](figure/plotting-shapes-1-1.pdf){#fig:plotting-shapes-1}
+
+Here we have to set the size of the plot to fit in the 
+
+### Classes as interfaces with refinements
+
 
 
 

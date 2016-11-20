@@ -125,15 +125,125 @@ bounding_box <- function(object) UseMethod("bounding_box")
 
 When constructing graphical objects we need to set their class, and these could be the constructors for the concrete classes:
 
-FIXME
+```{r}
+point <- function(x, y) {
+  object <- c(x, y)
+  class(object) <- "point"
+  names(object) <- c("x", "y")
+  object
+}
+
+rectangle <- function(x1, y1, x2, y2) {
+  object <- c(x1, y1, x2, y2)
+  class(object) <- "rectangle"
+  names(object) <- c("x1", "y1", "x2", "y2")
+  object
+}
+
+circle <- function(x, y, r) {
+  object <- c(x, y, r)
+  class(object) <- "circle"
+  names(object) <- c("x", "y", "r")
+  object
+}
+
+composite <- function(...) {
+  object <- list(...)
+  class(object) <- "composite"
+  object
+}
+```
+
+We just represent the graphical objects as vectors, except for the composite that we represent as a list so it can contain different types of other graphical objects. The points are just vectors of coordinates, the rectangles are represented by two coordinates, the rectangle's lower left and upper right corners, and circles are represented by a center point and a radius.
 
 For the `draw` methods we can just use basic graphics functions:
 
-FIXME
+```{r}
+draw.point <- function(object) {
+  points(object["x"], object["y"])
+}
 
-with the collection objects just calling `draw` on its components.
+draw.rectangle <- function(object) {
+  rect(object["x1"], object["y1"], object["x2"], object["y2"])
+}
 
+draw.circle <- function(object) {
+  plotrix::draw.circle(object["x"], object["y"], object["r"])
+}
 
+draw.composite <- function(object) {
+  invisible(Map(draw, object))
+}
+```
+
+except for the circles where we use the `draw.circle` function from the `plotrix` package for convenience. For the collection class we just call `draw` on all of a collection's components. We wrap the call to `Map` in `invisible` because we don't want the function call to print a list when we call it, but otherwise it is straightforward. 
+
+With these functions we can construct plots of graphical elements, see +@fig:plotting-shapes-1.
+
+```{r plotting-shapes-1, fig.cap="Plot of graphical elements."}
+plot(c(0, 10), c(0, 10), 
+     type = 'n', axes = FALSE, xlab = '', ylab = '')
+draw(point(5,5))
+draw(rectangle(2.5, 2.5, 7.5, 7.5))
+draw(circle(5, 5, 4))
+
+corners <- composite(point(2.5, 2.5), point(2.5, 7.5),
+                     point(7.5, 2.5), point(7.5, 7.5))
+draw(corners)
+```
+
+Here we have to set the size of the plot so it actually contains the elements we want to display there. Calculating what that area is, is what we have the `bounding_box` function for, and we can implement the different methods like this:
+
+```{r}
+bounding_box.point <- function(object) {
+  c(object["x"], object["y"], object["x"], object["y"])
+}
+
+bounding_box.rectangle <- function(object) {
+  c(object["x1"], object["y1"], object["x2"], object["y2"])
+}
+
+bounding_box.circle <- function(object) {
+  c(object["x"] - object["r"], object["y"] - object["r"],
+    object["x"] + object["r"], object["y"] + object["r"])
+}
+
+bounding_box.composite <- function(object) {
+  if (length(object) == 0) return(c(NA, NA, NA, NA))
+  
+  bb <- bounding_box(object[[1]])
+  x1 <- bb[1]
+  y1 <- bb[2]
+  x2 <- bb[3]
+  y2 <- bb[4]
+  
+  for (element in object) {
+    bb <- bounding_box(element)
+    x1 <- min(x1, bb[1])
+    y1 <- min(y1, bb[2])
+    x2 <- max(x2, bb[3])
+    y2 <- max(y2, bb[4])
+  }
+  
+  c(x1, y1, x2, y2)
+}
+```
+
+With that, we can collect all the graphical elements we wish to plot in a composite object and calculate the bounding box before we plot.
+
+```r
+all <- composite(
+  point(5,5),
+  rectangle(2.5, 2.5, 7.5, 7.5),
+  circle(5, 5, 4),
+  composite(point(2.5, 2.5), point(2.5, 7.5),
+            point(7.5, 2.5), point(7.5, 7.5))
+)
+bb <- bounding_box(all)
+plot(c(bb[1], bb[3]), c(bb[2], bb[4]),
+     type = 'n', axes = FALSE, xlab = '', ylab = '')
+draw(all)
+```
 
 ### Classes as interfaces with refinements
 
