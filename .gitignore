@@ -4,3 +4,9 @@ book.pdf
 book.epub
 book.mobi
 .Rproj.user
+ebook/figure/*
+ebook/figures/*
+pdf_book/figure/*
+pdf_book/figures/*
+ebook/*.md
+pdf_book/*.md
