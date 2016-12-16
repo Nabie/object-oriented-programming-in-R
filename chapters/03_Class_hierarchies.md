@@ -112,7 +112,7 @@ This class is abstract, not just because we are defining and interface so we can
 
 For dealing with more than one graphical object, in an interface that makes that easy, we also have a class, *Composite*, that captures a collection of graphical objects. 
 
-**FIXME: PUT FIGURE HERE**
+![Class hierarchy for graphical objects. The arrow from *Composite* to *GraphicalObject*, with a diamond starting point and an arrow endpoint, indicates that a *Composite* consists of a collection of *GraphicalObjects*.](figures/Shapes-class-hierarchy){#fig:shapes-hierarchy}
 
 Treating a collection of objects as an object of the same class as its components is a so-called *design pattern* and it makes it easier to deal with complex figures in this application. We can group together graphical objects in a hierarchy — similar to how you would group objects in a drawing tool — and we would not need to explicitly check in our code if we are working on a single object or a collection of objects. A collection of objects is also a graphical object and we can just treat it as such.
 

@@ -96,6 +96,6 @@ all <- composite(
             point(7.5, 2.5), point(7.5, 7.5))
 )
 bb <- bounding_box(all)
-plot(c(bb[1], bb[2]), c(bb[3], bb[4]),
+plot(c(bb[1], bb[3]), c(bb[2], bb[4]),
      type = 'n', axes = FALSE, xlab = '', ylab = '')
 draw(all)
