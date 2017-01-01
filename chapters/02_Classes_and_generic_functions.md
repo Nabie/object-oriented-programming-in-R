@@ -207,7 +207,7 @@ times <- do.call(rbind,
                         time_stacks))
 ```
 
-```{r, fig.cap="Time usage of reversal with two different stacks.", echo=FALSE}
+```{r performance_plot, fig.cap="Time usage of reversal with two different stacks.", echo=FALSE}
 library(ggplot2)
 ggplot(times) + 
   geom_boxplot(aes(x = as.factor(n), 

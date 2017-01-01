@@ -245,10 +245,52 @@ plot(c(bb[1], bb[3]), c(bb[2], bb[4]),
 draw(all)
 ```
 
-### Classes as interfaces with refinements
+## Class hierarchies as interfaces with refinements
 
+In the examples so far, we have had an abstract class defining and interface and then different concrete classes implementing it. In the case of the stack, the different implementations gave us different time-complexity tradeoffs, but the different implementations were conceptually all just stacks; in the case of the graphical objects the different concrete classes were conceptually different objects, just objects that can all be treated as graphical objects and thus manipulated through the general interface. These are common patterns in software design, but when sub-classes, such as the different types of graphical objects, represent different conceptual classes, they often also extend the interface.
 
+Take for instance statistical models. These are usually implemented as classes that implement a number of generic functions, such as `predict` or `coef`, that gives us a uniform interface to models and makes it possible to switch between different models in analysis without major rewrites of our analysis code. The generic functions implemented by all models gives us an interface for the most abstract kind of models — all models must implement `predict` and `coef`, for example, for us to be able to use them as drop-in replacements in our analysis code — but different types of models might add additional functionality to this interface that is not relevant for all models. We could, for example, imagine that decision trees add functionality for pruning trees, e.g. a function `prune`. If all decision tree implementations have a `prune` function, we can replace the implementation of decision trees and still reuse our code, but because `prune` is not implemented for all models we can only replace one implementation of a decision tree with another decision tree, not any kind of model. We would say that decision trees are specialisations of models. All decision trees are models but not all models are decision trees. In term of classes, we would have a super-class for models and a sub-class for decision trees that adds to the interface of models functions such as `prune`. If we have different implementations of decision trees, the decision tree class would typically also be abstract, and different implementations would inherit from this class rather than the more general model class, see +@fig:model-hierarchy.
 
+![Hierarchy of models where decision trees are specialisations of the *Model* class that adds the `prune` function and gives us an additional abstract class that instances of decision trees must implement.](figures/Model-hierarchy){#fig:model-hierarchy}
 
-## Hierarchies and implementation reuse
+As another example, we can consider a bibliography, which is essentially a list of publications. There are different kinds of publications but all have at least a name and one or more authors, so the most abstract way of representing publications would just have those two attributes. One thing we might want to do with a list of publications is to calculate bibliometrics such as how many citations a publication has. If each publication has a list of other works it cites, then we could calculate this from a database of all relevant publications. If we have a list of all publications a given author has created, we could also calculate how many citations this particular author has received or derived statistics such as the [h-index](https://en.wikipedia.org/wiki/H-index). 
 
+There are different types of publications, so we can create sub-classes for e.g. books and articles. A book will have an associated publisher and an ISBN while journal articles will have associated a journal and (typically) the page-numbers in the journal where the article can be found. If we, for simplicity, only allow those two types of publications we can represent it as the class hierarchy shown in  +@fig:bibliography-hierarchy.
+
+![Hierarchy of bibliography objects. The generic *Publication* class gives each publication a name and a list of authors and a list of other publications cited. Two concrete types of publications, *Article* and *Book*, adds extra attributes](figures/Bibliograph-hierarchy){#fig:bibliography-hierarchy}
+
+In this hierarchy, all the functions simply access attributes of objects, that is, they just extract data that is stored in these. Accessing attributes via functions, as opposed to extracting them from lists or vectors or however objects are implemented, is generally a good idea. It allows you to change how you represent data without having to change any code besides the accessor function. If your code only accesses your objects through functions then you have encapsulated the implementation details and updating your code later will be much simpler than it would otherwise be.
+
+Notice also that none of the accessor functions need to differ between the two concrete types of publications. The abstract *Publication* class accesses `name` and `authors` and the additional attributes provided in the other classes are disjunct. Because of this, there is no need to have generic functions for implementing this class hierarchy. We can do it using just plain old functions.
+
+```r
+# publication interface
+publication <- function(name, authors, citations) {
+  structure(list(name = name, authors = authors, citations = citations),
+            class = "publication")
+}
+name <- function(pub) pub$name
+authors <- function(pub) pub$authors
+
+# articles
+article <- function(name, authors, citations, journal, pages) {
+  structure(list(name = name, authors = authors, citations = citations,
+                 journal = journal, pages = pages),
+            class = c("article", "publication"))
+}
+journal <- function(pub) pub$journal
+pages <- function(pub) pub$pages
+
+# book
+book <- function(name, authors, citations, publisher, ISBN) {
+  structure(list(name = name, authors = authors, citations = citations,
+                 publisher = publisher, ISBN = ISBN),
+            class = c("book", "publication"))
+}
+publisher <- function(pub) pub$publisher
+ISBN <- function(pub) pub$ISBN
+```
+
+Generic functions are perfect for getting different behaviour for a given operation for different classes, but when we can get the behaviour we desire using plain old functions there is no reason to invoke the more complicated type of functions.
+
+The implementation of publications is straightforward except when it comes to the `class` attributes set in the constructor functions. Here we set the classes to lists of class names instead of just the class names. This is how we specify that a `"book"` object or an `"article"` object is also a `"publication"` object. The design we have in mind requires that books and articles are publications, but since S3 classes are just names represented as strings, we cannot make this explicit in R. Instead we represent the class hierarchy by having the `class` attribute be lists of class names, going up the hierarchy from the most specialised to the most abstract object. How R interprets such a list of class names, and how it uses it to find the right implementations of generic functions, is the topic of the next chapter.
