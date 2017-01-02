@@ -41,3 +41,20 @@ this_book <- book("Object-oriented Programming in R", "Thomas Mailund", NULL,
                   "Thomas Mailund", "NONE")
 
 print(this_book)
+
+format.publication <- function(publ) {
+  paste(name(publ), authors(publ), sep = ", ")
+}
+
+format.article <- function(publ) {
+  paste(NextMethod(), journal(publ), pages(publ), sep = ", ")
+}
+
+format.book <- function(publ) {
+  paste(NextMethod(), publisher(publ), ISBN(publ), sep = ", ")
+}
+
+this_book <- book("Object-oriented Programming in R", "Thomas Mailund", NULL,
+                  "Thomas Mailund", "NONE")
+
+print(this_book)
