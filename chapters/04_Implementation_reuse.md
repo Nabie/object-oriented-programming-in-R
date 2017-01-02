@@ -134,7 +134,9 @@ You are generally better of if you always call the constructor of the super-clas
 
 When we specialise generic functions we do not always need to implement everything from scratch either. Sometimes we can reuse implementations from more abstract classes, we just need to tweak the results of them a little. We can always call the function of a super-class explicitly using the full name of the function, but this will only work if the class actually implements its own version — it will not work if it simply inherits it — and you have to be careful every time you modify the class hierarchy that you are not breaking assumptions underlying such direct calls.
 
-A better solution is to use the `NextMethod` function. This function lets you call inherited functions in a way that resembles `UseMethod` and that uses the `class` sequence.
+A better solution is to use the `NextMethod` function. This function lets you call inherited functions in a way that resembles `UseMethod` and that uses the `class` sequence. The `NextMethod` function is magical in a similar way to `UseMethod`. It knows which generic function you are implementing — although, like `UseMethod` you can override this — and it will search through the `class` sequence of the first object of your function — again, you can override this, but it is such a common idiom that you probably shouldn't. Unlike `UseMethod`, though, it doesn't terminate the function you call it from and you can use the value it returns.
+
+As an example we can consider the bibliography objects we discussed at the end of the previous chapter. Here we had the super-class `"publication"` and the two sub-classes `"article"` and `"book"`, and we had a generic method `format` for formatting citations. We can write a `format` function for the publication class that simply formats the name and the authors list and in the specialisations of the method we can call `NextMethod` to obtain this string and extend it with information available in the sub-classes.
 
 ```r
 format.publication <- function(publ) {
@@ -150,28 +152,34 @@ format.book <- function(publ) {
 }
 ```
 
+When we call `NextMethod`, R will search through the `class` sequence — starting where it left off last time it did the search — for a class that implements the generic function we are currently evaluating.
 
+We can use the `A`, `B`, and `C` classes to see this in action. If we define functions that all call `NextMethod` and evaluate it for objects of each of the tree classes we will see that the `A` object, `x`, will evaluate the `A` method and the default function, the `B` object, `y` will evaluate the `B` function and then continue with the `A` function before the default version, and the `C` object, `z`, will evaluate all the functions.
 
 ```{r}
-i <- function(x) UseMethod("i")
-i.default <- function(x) print("i.default")
-i.A <- function(x) {
-  print("i.A")
+f <- function(x) UseMethod("f")
+f.default <- function(x) print("f.default")
+f.A <- function(x) {
+  print("f.A")
   NextMethod()
 }
-i.B <- function(x) {
-  print("i.B")
+f.B <- function(x) {
+  print("f.B")
   NextMethod()
 }
-i.C <- function(x) {
-  print("i.C")
+f.C <- function(x) {
+  print("f.C")
   NextMethod()
 }
 
-i(x)
-i(y)
-i(z)
+f(x)
+f(y)
+f(z)
+```
 
+If we implement another function where we only implement version for classes `A` and `C`, but not for `B`, we will see the `C` objects evaluating the `C` version and then the `C` version; since there is no `B` version the search done by `NextMethod` will not find it and thus continue to the `A` version.
+
+```{r}
 j <- function(x) UseMethod("j")
 j.default <- function(x) print("j.default")
 j.A <- function(x) {
@@ -188,8 +196,17 @@ j(y)
 j(z)
 ```
 
+All the method dispatching — the technical term for this looking up of implementations of generic functions — is entirely based on the list of classes in the `class` attribute. Class hierarchies are not explicitly represented and it is your own responsibility that the `class` lists reflects the design of class hierarchies you have in mind. If we reverse the order the `class` list, R is just as happy to work with this
+
 ```{r}
+f(z)
 class(z) <- rev(class(z))
-i(z)
+f(z)
 ```
+
+If we reverse the order of classes, the search for the first function in `UseMethod` just starts at the most abstract class and works it way down the list until it finds an implementation — in this case it finds it right away — and the calls to `NextMethod` just continues searching from where `UseMethod` or previous `NextMethod` calls ended, exactly like before. The default function is always last here because once you get through the list is when the default is invoked. If the `A` class is an abstract class that `C` specialises, this will of course give you incorrect behaviour. You would invoke the abstract and not the specialised function. But the mechanism for resolving generic functions into concrete classes does not know about class hierarchies so it will just search through the list.
+
+This also means that you can write different classes that consider the hierarchy of other classes to be complete different. If one `class` list is `c("A", "B", "C")` and another is `c("B", "C", "A")`, the first consider `C` the most abstract and `A` the most derived class while the second considers `A` the most abstract and `B` the most derived. The mechanism for how R finds the function to call is simple enough, but if you begin writing code where your class hierarchy depends on which object you are looking at, you are on the road to madness.
+
+
 
