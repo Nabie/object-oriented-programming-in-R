@@ -266,7 +266,8 @@ Notice also that none of the accessor functions need to differ between the two c
 ```r
 # publication interface
 publication <- function(name, authors, citations) {
-  structure(list(name = name, authors = authors, citations = citations),
+  structure(list(name = name, authors = authors, 
+                 citations = citations),
             class = "publication")
 }
 name <- function(pub) pub$name
@@ -274,7 +275,8 @@ authors <- function(pub) pub$authors
 
 # articles
 article <- function(name, authors, citations, journal, pages) {
-  structure(list(name = name, authors = authors, citations = citations,
+  structure(list(name = name, authors = authors, 
+                 citations = citations,
                  journal = journal, pages = pages),
             class = c("article", "publication"))
 }
@@ -283,7 +285,8 @@ pages <- function(pub) pub$pages
 
 # book
 book <- function(name, authors, citations, publisher, ISBN) {
-  structure(list(name = name, authors = authors, citations = citations,
+  structure(list(name = name, authors = authors, 
+                 citations = citations,
                  publisher = publisher, ISBN = ISBN),
             class = c("book", "publication"))
 }
@@ -305,11 +308,13 @@ We would probably like code to format publications for making publication lists 
 format <- function(publ) UseMethod("format")
 
 format.article <- function(publ) {
-  paste(name(publ), authors(publ), journal(publ), pages(publ), sep = ", ")
+  paste(name(publ), authors(publ), 
+        journal(publ), pages(publ), sep = ", ")
 }
 
 format.book <- function(publ) {
-  paste(name(publ), authors(publ), publisher(publ), ISBN(publ), sep = ", ")
+  paste(name(publ), authors(publ), 
+        publisher(publ), ISBN(publ), sep = ", ")
 }
 ```
 

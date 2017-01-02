@@ -2,7 +2,8 @@
 CHAPTERS := 000_header.md \
 			01_Introduction.md \
 			02_Classes_and_generic_functions.md \
-			03_Class_hierarchies.md
+			03_Class_hierarchies.md \
+			04_Implementation_reuse.md
 
 SOURCE_CHAPTERS := $(foreach chapter,$(CHAPTERS),chapters/$(chapter))
 
