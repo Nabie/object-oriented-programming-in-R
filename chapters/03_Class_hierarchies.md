@@ -294,3 +294,29 @@ ISBN <- function(pub) pub$ISBN
 Generic functions are perfect for getting different behaviour for a given operation for different classes, but when we can get the behaviour we desire using plain old functions there is no reason to invoke the more complicated type of functions.
 
 The implementation of publications is straightforward except when it comes to the `class` attributes set in the constructor functions. Here we set the classes to lists of class names instead of just the class names. This is how we specify that a `"book"` object or an `"article"` object is also a `"publication"` object. The design we have in mind requires that books and articles are publications, but since S3 classes are just names represented as strings, we cannot make this explicit in R. Instead we represent the class hierarchy by having the `class` attribute be lists of class names, going up the hierarchy from the most specialised to the most abstract object. How R interprets such a list of class names, and how it uses it to find the right implementations of generic functions, is the topic of the next chapter.
+
+It is not uncommon to have a class hierarchy similar to the one we made here for publications, but there are some slight problems with it. To access book-specific attributes you need to know that the object you are working on is a book; treating publications in aggregates without having to write specialised code for dealing with books or articles is the purpose of using object-orientation and having the publication hierarchy to begin with. There is nothing wrong with having a class hierarchy where sub-classes add functions to the interface of their super-class, but if you find yourself writing such a hierarchy you should think carefully about how objects from the hierarchy should be accessed and manipulated.
+
+It is generally best to put functions as high up in the hierarchy as it makes sense to do, thus insuring that as many classes from the hierarchy as possible will support them. With generic functions, the different sub-classes can implement the methods very differently, but all objects you manipulate will at least implement the methods you call them on. With the publication class hierarchy we have designed here, the only things we can really do if we want to write reusable code is to access names and authors and construct graphs of citations. The special attributes for books and articles are only available in a type-safe way if we explicitly check that we are accessing books and articles, respectively.
+
+We would probably like code to format publications for making publication lists and such. Here we would need the information stored in books and articles, but since accessing these directly requires that we first test the class of the objects, the code would be a bit cumbersome and likely also error prone. Worse, if we added another publication type to the hierarchy, for example conference contributions, we would need to update all code that does this class checking and handle the different classes in different ways to handle this type as well. Avoiding this is exactly why we need generic functions, so the right design would be to have a generic function for formatting citations and specialise it for the sub-classes.
+
+```r
+format <- function(publ) UseMethod("format")
+
+format.article <- function(publ) {
+  paste(name(publ), authors(publ), journal(publ), pages(publ), sep = ", ")
+}
+
+format.book <- function(publ) {
+  paste(name(publ), authors(publ), publisher(publ), ISBN(publ), sep = ", ")
+}
+```
+
+and we could then use this `format` function in another generic function, `print`, for displaying publications:
+
+```r
+print.publication <- function(publ) print(format(publ))
+```
+
+When we sub-class in order to extend an interface we add functions that only a subset of objects will support. Sometimes this is necessary, when there are operations that truly only make sense for some objects — like pruning decision trees, where pruning something like a linear model is not meaningful — but as a general rule, I would suggest that you keep specialisation like this to a minimum. It might feel like a good design to have a large hierarchy of more or less specialised classes, but when you have to work with objects from the hierarchy you want them to be as similar as you can get them so you can treat all of them using the same (generic) functions, so you will in general want to stick to the most abstract interface in any case. You might as well design your code with that in mind.
