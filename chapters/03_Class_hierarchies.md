@@ -321,7 +321,7 @@ format.book <- function(publ) {
 and we could then use this `format` function in another generic function, `print`, for displaying publications:
 
 ```r
-print.publication <- function(publ) print(format(publ))
+print.publication <- function(x, ...) print(format(x))
 ```
 
 When we sub-class in order to extend an interface we add functions that only a subset of objects will support. Sometimes this is necessary, when there are operations that truly only make sense for some objects — like pruning decision trees, where pruning something like a linear model is not meaningful — but as a general rule, I would suggest that you keep specialisation like this to a minimum. It might feel like a good design to have a large hierarchy of more or less specialised classes, but when you have to work with objects from the hierarchy you want them to be as similar as you can get them so you can treat all of them using the same (generic) functions, so you will in general want to stick to the most abstract interface in any case. You might as well design your code with that in mind.
