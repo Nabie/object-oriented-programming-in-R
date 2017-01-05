@@ -367,7 +367,9 @@ It is not much of a safety check for the correct implementation of an interface,
 
 ## Dispatching on type-signatures
 
+The signatures we have used so far when defining specialised methods consisted of just a class name. Used this way, S4 methods work just as S3 generic functions, but the dispatch mechanism for S4 methods is more general than this and it is possible to dispatch based on the type of all a function's arguments.
 
+For example, we can define a function `f` of two arguments and refine it in different ways based on the type of the two arguments. Say, have one version when the arguments are numeric and another when they are logical.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setGeneric("f", def = function(x, y) standardGeneric("f"))
@@ -377,10 +379,37 @@ setMethod("f", signature = c("logical", "logical"),
           definition = function(x, y) x & y)
 ```
 
+When calling `f`, the appropriate function is then selected based on the type of the arguments.
+
 ```{r}
 f(2, 3)
 f(TRUE, FALSE)
 ```
+
+The type matching goes from most specific to most abstract, following class hierarchies for classes and would match integer over numeric over complex for numerical values. So, if we define a version of `f` that matches integers for the first value it will call that one when we give it an integer and the version defined above when we call it with `numeric` values.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+setMethod("f", signature = c("integer", "complex"),
+          definition = function(x, y) x - y)
+```
+
+```{r}
+f(2, 2)
+f(as.integer(2), 2)
+```
+
+Here, the second argument would catch any complex number, but we can specialise it to match integers and numeric instead:
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+setMethod("f", signature = c("integer", "numeric"),
+          definition = function(x, y) 2*x + y)
+```
+
+```{r}
+f(as.integer(2), 2)
+```
+
+If we just give the signature a single string, as we did in the cases with classes earlier, it just dispatches on the type of the first argument
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("f", signature = "character",
@@ -391,7 +420,48 @@ setMethod("f", signature = "character",
 f("foo", "bar")
 ```
 
+In general, the signature list just matches types for a prefix of parameters if you do not provide types for all of them.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+setGeneric("g", def = function(x, y, z) standardGeneric("g"))
+setMethod("g", signature = "character",
+          definition = function(x, y, z) "g(character)")
+setMethod("g", signature = c("numeric", "character"),
+          definition = function(x, y, z) "g(numeric, character)")
+```
+```{r}
+g("foo", NA, NA)
+g(12, "bar", NA)
+```
+
+If you want to match any type whatsoever, you can use the type `"ANY"`.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+setMethod("f", signature = "ANY",
+          definition = function(x, y) "any")
+```
+```{r}
+f(list(), NULL)
+```
+
+This can be used to define a catch-all default implementation for when no more specific implementation matches the arguments.
+
+You can even match for cases when some arguments are not provided using the type `"missing"`. 
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+setMethod("f", signature = c("ANY", "missing"),
+          definition = function(x, y) "missing")
+```
+```{r}
+f(list(), NULL)
+f(list())
+```
+
+Here, the first call matches the version that take any arguments because the second argument is not missing, it is just `NULL`, while the other matches the more specific signature where the second argument is missing.
+
 ## Operator overloading
+
+S4 also supports operator overloading and in much the same way as S3 does, just using the method mechanism for generic methods. We can try implementing the modulus class as an S4 class like this:
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 modulus <- setClass("modulus", 
@@ -399,11 +469,23 @@ modulus <- setClass("modulus",
                       value = "numeric",
                       n = "numeric"
                     ))
+                    
+setMethod("show", signature = "modulus",
+          definition = function(object) {
+            cat("Modulus", object@n, "values:\\n")
+            print(object@value)
+          })
 ```
 
 ```{r}
 (x <- modulus(value = 1:6, n = 3))
 ```
+
+The `show` method we implemented here is the S4 equivalent of `print` and we use it to pretty-print `modulus` objects.
+
+If we then want to implement a single operator we can specialise the method for it, just as we did with generic functions for S3, but we can use the signature type matching to capture different combinations of arguments instead of writing type-checking code at the beginning of the generic function as we had to for S3.
+
+Below we handle the three cases we want for modulus arithmetic, the case where both operands are `modulus` objects and the two cases where one of them is a `modulus` object and the other is `numeric`.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("+", signature = c("modulus", "modulus"),
@@ -424,14 +506,23 @@ setMethod("+", signature = c("numeric", "modulus"),
           })
 ```
 
+Now we can combine `numeric` and `modulus` in addition, and we didn't have to explicitly check the type in the functions since the type dispatch handled that for us.
+
 ```{r}
 x + 1:6
 1:6 + x
+```
+
+We also handle the case with two `modulus` object and check that their `n` slots are equal.
+
+```{r}
 y <- modulus(value = 1:6, n = 2)
 x + y
 y <- modulus(value = 1:6, n = 3)
 x + y
 ```
+
+We also have function group solutions in S4, and for defining arithmetic operations we need the group `Arith`. This works much as the `Ops` generic function in S3 except that we, again, can use type matching instead of explicitly checking the type of the arguments inside the function(s).
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("Arith", 
@@ -462,3 +553,70 @@ x * y
 
 ## Combining S3 and S4 classes
 
+You can, to a limited degree, combine S3 and S4. The two systems are different and trying to write software that combine S3 and S4 class hierarchies intimately is not something I will recommend. It only leads to weeping and gnashing of teeth. But if you have existing S3 code and you want to write an extension in S4 you can do this.
+
+Let's say we have an S3 class, `X`, with generic functions `foo` and `bar`.
+
+```{r}
+X <- function(x) {
+  structure(list(x = x), class = "X")
+}
+
+foo <- function(x) UseMethod("foo")
+bar <- function(x) UseMethod("bar")
+foo.X <- function(x) "foo"
+bar.X <- function(x) x$x
+
+x <- X(5)
+foo(x)
+bar(x)
+```
+
+If we want to write a sub-class of `X`, let's call it `Y`, and we want to write `Y` in S4, we cannot simply use `X` in the `contains` option to `setClass`. Well, you can, but if you try to instantiate objects of the class you will get an error. The S4 system doesn't know about any class called `X` so we first have to make it aware of it. We can do that using the function `setOldClass`.
+
+```{r}
+setOldClass("X")
+```
+
+This does two things: it lets S4 know about the class so we can inherit from it and it makes any generic function defined for the class into functions we can specialise with `setMethod`. So after calling `setOldClass` we can make a sub-class of `A` as an S4 class.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+Y <- setClass("Y", contains = "X")
+```
+
+Calling `foo` or `bar` on an object of type `Y` will also work with the dynamic dispatch system and will invoke `foo.Y` since there is no better matching `foo.Y`. 
+
+```{r}
+y <- Y()
+foo(y)
+```
+
+If we want to, we could make a specialised version of `foo` for `Y` objects by implementing `foo.Y`
+
+```{r}
+foo.Y <- function(x) "Y::foo"
+foo(y)
+```
+
+Of course, this would be the S3 of refining generic functions and since we are working with an S4 class now it is better to use `setMethod`.
+
+Similar to `foo`, calling `bar` invokes `bar.X`. In this case resulting in an error because, even though S4 knows about the `X` class it doesn't know about the constructor function or the representation of `X` objects it create.
+
+```{r}
+bar(y)
+```
+
+There is no formal definition of constructors or object representations in S3, only informal coding conventions, so no way for S4 to know about what the `bar` function expects to be able to get out of an `X` object. There is a limit to how well we can integrate S3 and S4 automatically and some coding is needed to get the functionality of the S3 version to also match the S4 class.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+Y <- setClass("Y", contains = "X", slots = c(x = "ANY"))
+setMethod("bar", signature = "Y",
+          definition = function(x) x@x)
+```
+
+```{r}
+y <- Y(x = 13)
+bar(y)
+```
+
+I don't recommend mixing S3 and S4. If you have code written using the S3 system you are probably better off sticking with S3 rather than trying to mix the two systems, but if you are writing code using S4 and need to include a little functionality from S3 classes, this is the way to do it.

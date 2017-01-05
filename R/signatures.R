@@ -12,3 +12,8 @@ setMethod("f", signature = "character",
           definition = function(x, y) x)
 
 f("foo", "bar")
+
+setMethod("f", signature = "ANY",
+          definition = function(x, y) x)
+
+f(list())

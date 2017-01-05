@@ -5,6 +5,12 @@ modulus <- setClass("modulus",
                       n = "numeric"
                     ))
 
+setMethod("show", signature = "modulus",
+          definition = function(object) {
+            cat("Modulus", object@n, "values:\n")
+            print(object@value)
+          })
+
 (x <- modulus(value = 1:6, n = 3))
 
 setMethod("+", signature = c("modulus", "modulus"),
