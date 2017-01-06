@@ -49,3 +49,36 @@ x + 1:6
 1:6 + x
 2 * x
 
+y <- modulus$new(value = 1:2, n = 3)
+x + y
+
+
+modulus2 <- R6Class("modulus2", inherit = modulus)
+y <- modulus2$new(value = 1:2, n = 3)
+
+x + y
+
+class(y)
+
+
+
+setOldClass("modulus")
+setGeneric("f", def = function(e1,e2) standardGeneric("f"))
+setMethod("f", signature = c("modulus", "modulus"),
+          definition = function(e1, e2) {
+            return("foo?")
+            if (e1@n != e2@n) stop("Incompatible modulus")
+            modulus(value = e1@value + e2@value,
+                    n = e1@n)
+          })
+
+setMethod("+", signature = c("modulus", "modulus"),
+          definition = function(e1, e2) {
+            return("foo?")
+            if (e1@n != e2@n) stop("Incompatible modulus")
+            modulus(value = e1@value + e2@value,
+                    n = e1@n)
+          })
+
+f(x, y)
+x + y

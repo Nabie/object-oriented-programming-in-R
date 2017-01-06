@@ -213,9 +213,17 @@ You can modify public data attributes, as we saw above for `x`, but don't try to
 stack$pop <- NULL
 ```
 
-In general, it is considered good practise to keep data private and methods that are part of a class interface public. There are several reasons for this: 
+In general, it is considered good practise to keep data private and methods that are part of a class interface public. There are several reasons for this: If data is only modified through a class' methods then you have more control over the state of objects and can ensure that an object is always in a valid state before and after all method calls, but, perhaps more importantly, keeping the representation of objects hidden away limits the dependency between a class and code that uses the class. If any code can access the inner workings of objects there is a good chance that eventually a lot of code will. This means that you will have to modify all the uses of a class if you change how objects of the class are represented. If, on the other hand, code only accesses objects through a public interface, then you can modify all the private attributes as much as you want as long as you keep the public interface unchanged. You will of course have to modify some of the class' methods, but changes will be limited to that.
+
+In the R6 system, private attributes can be accessed only by methods you define for the class or in methods defined in sub-classes. If you are used to languages such as C++ or Java, this might surprise you, but the private attributes in R6 are similar to the protected attributes in those languages and not the private attributes.
 
 ### Active bindings
+
+There is a way of getting the syntax of accessing data attributes without actually doing so. If you have code that already uses a public attribute and you want to change that into a function to hide or modify implementation details you can use this, or if you just like the syntax for data better than method calls.
+
+This is achieved through the `active` argument to `R6Class`. Here you can provide a list of attributes, as for `private` and `public`, but these attributes should be functions and they will define a value-like syntax for calling the functions.
+
+As an example we can take the elements in the vector stack. We want to be able to write `stack$elements` but we do not want to make the elements public. So we write a function for `elements` and add it to `active`. We cannot have the same name used both in `private` and `active` (or in `public` for that matter), so we have to change the name for the private data attribute first, and of course update all the existing methods. After doing that, we can add the `active` function like this:
 
 ```{r, echo=FALSE}
 VectorStack <- R6Class("VectorStack",
@@ -267,17 +275,28 @@ VectorStack <- R6Class("VectorStack",
                        ))
 ```
 
-```{r}
-(stack <- VectorStack$new(elements = 1:4))
-stack$elements
+Functions in the `active` list should take one argument, `value`. This value will be missing when we read the attribute and contain data when we assign to the attribute. In this implementation we consider assigning to the elements an error and we return the private `elements_` when we read the attribute.
 
+This will give us the elements:
+
+```{r}
+stack <- VectorStack$new(elements = 1:4)
+stack$elements
+```
+
+while this will raise an error:
+
+```{r}
 stack$elements <- rev(1:3)
 ```
 
+You can use these `active` functions to modify values you assign, to ensure object consistency, or to fake an attribute that isn't directly stored but exists implicitly by being computable from other data. It all depends on how you choose to use them.
+
 ## Inheritance
 
-```{r}
+The way we specify class hierarchies, and the way method-calls are dispatched to the most specialised implementation of a method, is fairly straightforward. We can take the example with three classes we have seen two times earlier and implement it in R6. To specify that one class inherits from another we use the `inherit` argument to `R6Class` and to write more specialised version of a method we simply add the method to the `public` or `private` lists. Overall, writing methods and class hierarchies is done with much simpler code in R6 than in both S3 and S4.
 
+```{r}
 A <- R6Class("A",
              public = list(
                f = function() print("A::f"),
@@ -293,32 +312,173 @@ C <- R6Class("C", inherit = B,
              public = list(
                h = function() print("C::h")
              ))
+```
 
+There are no surprises in how we instantiate objects of the classes; we have to use the `new` method in the object generators:
+
+```{r}
 x <- A$new()
 y <- B$new()
 z <- C$new()
+```
 
+For method `f` we only have an implementation for class `A`, so calling `f` on all three objects will call that version. Except that the method call has a different syntax from the implementations for S3 and S4, there are no surprises here.
+
+```{r}
 x$f()
 y$f()
 z$f()
+```
 
+For `g`, we have implementations in both `A` and `B`, and the `C` object will call the `B` implementation since this is the most specialised for that class.
+
+```{r}
 x$g()
 y$g()
 z$g()
+```
 
+Finally, for `h` we have implementations in all three classes, so we call different methods for the three objects.
+
+```{r}
 x$h()
 y$h()
 z$h()
 ```
 
+There should not be any surprises in how inheritance and method dispatching works in R6.
+
 ## References to objects and object sharing
 
+One important thing is different from R6 objects and all other R objects: the R6 objects have a state that can be modified. If you are used to other object-oriented programming languages this might not sound like much of a deal, but in general we can assume that calling functions do not have side-effects in R except for changing values that variables point to. When objects can suddenly change state, we need to worry about when two references are to the same object or merely references to two objects that represent the same values.
 
+The first thing you need to know is that values set in the definition of `private` and `public` lists are shared between objects of a class. To see this in action we can define these two classes:
+
+```{r}
+A <- R6Class("A", public = list(x = 1:5))
+B <- R6Class("B", 
+             public = list(
+               x = 1:5,
+               a = A$new()
+             ))
+```
+
+Here, I am breaking the rule about not having public data to simplify the example. In any case, what we have is one class, `A`, that contains a vector and another, `B`, that contains another vector and a reference to an `A` object. Let's create two objects of class `B`.
+
+```{r}
+x <- B$new()
+y <- B$new()
+```
+
+We can first check the behaviour of the vector in the objects. It is initialled to the first five natural numbers so that is what both objects contain initially.
+
+```{r}
+x$x
+y$x
+```
+
+If we then modify the vector in `x` we see that this vector changes but the vector in `y` does not. This is how vectors behave in R and generally what we would expect.
+
+```{r}
+x$x <- 1:3
+x$x
+y$x
+```
+
+If we modify the vector in the nested `A` object, however, we get a different behaviour. Here, changing the value through `x` *also* changes the value in `y`.
+
+```{r}
+x$a$x
+y$a$x
+x$a$x <- 1:3
+x$a$x
+y$a$x
+```
+
+Even creating a new object from the class will give us an object that contains the modified value.
+
+```{r}
+z <- B$new()
+z$a$x
+```
+
+All three objects are referring to the same `A` object and modifications to this object are reflected in all of them. This is generally how R6 classes behave. The copy-on-modification semantics of other R objects is not how R6 objects behave. When you have two references to the same object then modifying one of them will also modify the other.
+
+Modifying `x$x` didn't change `y$x` because `x` and `y` are different objects, but if we make another reference to the object pointed to by `x` then changes to `x` will be reflected in the other.
+
+```{r}
+w <- x
+w$x
+x$x <- 1:5
+w$x
+```
+
+If you want objects of a class to contain distinct objects of an R6 class then you can create the objects in the `initialise` function instead of in the `public` or `private` lists. This function is called whenever you create a new object and contained objects that are created in the initialisation function will be distinct and thus not shared.
+
+We can modify `B` like this:
+
+```{r}
+B <- R6Class("B", 
+             public = list(
+               x = 1:5,
+               a = NULL,
+               initialize = function() {
+                 self$a <- A$new()
+               }))
+```
+
+We need to re-create `x` and `y` to have them refer to this new class
+
+```{r}
+x <- B$new()
+y <- B$new()
+```
+
+but now we can modify one without modifying the other.
+
+```{r}
+x$a$x
+x$a$x <- 1:3
+x$a$x
+y$a$x
+```
+
+Since assigning from one variable to another just create another reference to the same object, we need another way of creating an effective copy. This is done with the `clone` method that all `R6` objects automatically implement.
+
+If we clone object `x` we get a new copy of the object, which contains the same state as `x` does at the time of cloning, but which can be modified without changing `x`.
+
+```{r}
+z <- x$clone()
+z$x
+z$x <- 1:2
+x$x
+```
+
+The default cloning is shallow, however. It makes a copy of the object, but if the object contains a references to an R6 class then the clone will contain a reference to the same object. If we modify the `a` attribute of `z` we will also modify the `a` attribute of `x`.
+
+```{r}
+x$a$x
+z$a$x <- 1:5
+x$a$x
+```
+
+If we call `clone` with the option `deep = TRUE` we will instead get a deep copy; here we get a transitive closure of cloned references, so here we can modify the `a` attribute safe in the knowledge that they are distinct between an object and its clone.
+
+```{r}
+y <- x$clone(deep = TRUE)
+
+x$a$x
+y$a$x <- NULL
+x$a$x
+```
 
 ## Interaction with S3 and operator overloading
 
-```{r}
+We don't have a mechanism for defining new operators for R6 objects, but we can use the S3 system for this. Objects create from R6 object generators are assigned a `class` attribute, a list of the name we give the class when creating the generator and `"R6"`, so we can define generic function specialisations for them.
 
+We can implement the `modulus` class in R6 like this:
+
+```{r}
 modulus <- R6Class("modulus", 
                     private = list(
                       value_ = c(),
@@ -330,7 +490,7 @@ modulus <- R6Class("modulus",
                        private$n_ <- n
                      },
                      print = function() {
-                       cat("Modulus", private$n_, "values:\n")
+                       cat("Modulus", private$n_, "values:\\n")
                        print(private$value_)
                      }
                    ),
@@ -346,7 +506,19 @@ modulus <- R6Class("modulus",
                    ))
 
 (x <- modulus$new(value = 1:6, n = 3))
+```
 
+There are a few things going on in this class definition. We define the attributes for holding the data in the `private` list, define an initialisation function and a print function, and then we define two `action` attributes for accessing the data. We allow users of the class to modify `values` but not `n` (for no good reason other than it gives us an example of two different behaviour), and for the `values` attribute we make sure that we modify the data before we store it in the private `values_` variable.
+
+The `class` attribute of objects of this class contains
+
+```{r}
+class(x)
+```
+
+This means that we can define arithmetic operations on the class using the S3 system like this:
+
+```{r}
 Ops.modulus <- function(e1, e2) {
   nx <- ny <- NULL
   if (inherits(e1, "modulus")) nx <- e1$n
@@ -364,8 +536,25 @@ Ops.modulus <- function(e1, e2) {
   result <- NextMethod() %% n
   modulus$new(result, n)
 }
+```
 
+The implementation is slightly different from the S3 version, because the data in the objects are represented differently, but the general control-flow is the same, and with this definition we have modulus arithmetic.
+
+```{r}
 x + 1:6
 1:6 + x
 2 * x
 ```
+
+If you make sub-classes of an R6 class like `modulus` you will get a `class` attribute that also reflects this, so the S3 dispatch mechanism will also work for sub-classes in the R6 system.
+
+```{r}
+modulus2 <- R6Class("modulus2", inherit = modulus)
+y <- modulus2$new(value = 1:2, n = 3)
+class(y)
+x + y
+```
+
+That being said, don't go crazy with combing R6 and S3 either; it will only confuse the maintainers of your code (which are likely to include yourself somewhere in the future).
+
+

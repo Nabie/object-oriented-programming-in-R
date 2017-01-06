@@ -30,3 +30,24 @@ z$g()
 x$h()
 y$h()
 z$h()
+
+
+A <- R6Class("A",
+             private = list(x = 5),
+             public = list(
+               f = function() print("A::f"),
+               g = function() print("A::g"),
+               h = function() print("A::h")
+             ))
+B <- R6Class("B", inherit = A,
+             public = list(
+               g = function() private$x,
+               h = function() print("B::h")
+             ))
+C <- R6Class("C", inherit = B,
+             public = list(
+               h = function() print("C::h")
+             ))
+
+y <- B$new()
+y$g()
