@@ -6,6 +6,7 @@ CHAPTERS := 000_header.md \
 			04_Implementation_reuse.md \
 			05_operator_overloading.md \
 			06_S4_classes.md \
+			07_R6_classes.md \
 
 SOURCE_CHAPTERS := $(foreach chapter,$(CHAPTERS),chapters/$(chapter))
 
