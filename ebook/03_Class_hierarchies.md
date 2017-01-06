@@ -42,7 +42,7 @@ We often show classes and their relationships in diagrams as that shown in +@fig
 
 ![Class hierarchy for stacks.](figures/Stack-class-hierarchy){#fig:stack-hierarchy}
 
-The two concrete classes only implement the methods also listed in the abstract class, and when this is the case we won’t always list the methods again in the derived classes. It is to be understood that any method implemented in a more abstract class will also be implemented in more derived classes.
+The two concrete classes only implement the methods also listed in the abstract class, and because of this we won’t always list the methods again in the derived classes. It is to be understood that any method implemented in a more abstract class will also be implemented in more derived classes.
 
 ### Implementing abstract and concrete classes in R
 
@@ -86,17 +86,240 @@ methods("top")
 ```
 
 ```
-## [1] top.default      top.vector_stack
+## [1] top.default      top.list_stack  
+## [3] top.vector_stack
 ## see '?methods' for accessing help and source code
 ```
 
-### Classes as interfaces with refinements
+### Another example: graphical objects
 
 The “is-a” relationship underlying a class hierarchy is more flexible than just having abstract classes and implementations of such. It provides us with both a way of modelling that some objects really are of different but related classes and it provides us with a mechanism for thinking about interfaces as specialisations of other interfaces.
 
-Let us consider, for an example, an application where we operate on some graphical object -- perhaps as part of a new visualisation package.
+Let us consider, for an example, an application where we operate on some graphical object -- perhaps as part of a new visualisation package. The most basic class of this application is the *GraphicalObject* whose objects you can `draw`. Being able to draw objects is the most basic operation we need for graphical objects. Graphical objects also have a “bounding box” — a rectangle that tells us how large the shape is; something we might need when drawing objects.
+
+This class is abstract, not just because we are defining and interface so we can have different implementations, like with did with the stack, but because it doesn’t really make sense to *have* a graphical interface at this abstract level. A concrete class that does make sense to have objects of is *Point* which is a graphical object representing a single point. Other classes could be *Circle* and *Rectangle*. 
+
+For dealing with more than one graphical object, in an interface that makes that easy, we also have a class, *Composite*, that captures a collection of graphical objects. 
+
+![Class hierarchy for graphical objects. The arrow from *Composite* to *GraphicalObject*, with a diamond starting point and an arrow endpoint, indicates that a *Composite* consists of a collection of *GraphicalObjects*.](figures/Shapes-class-hierarchy){#fig:shapes-hierarchy}
+
+Treating a collection of objects as an object of the same class as its components is a so-called *design pattern* and it makes it easier to deal with complex figures in this application. We can group together graphical objects in a hierarchy — similar to how you would group objects in a drawing tool — and we would not need to explicitly check in our code if we are working on a single object or a collection of objects. A collection of objects is also a graphical object and we can just treat it as such.
+
+Implementing this class hierarchy is fairly straight-forward. The abstract class *GraphicalObject* is not explicitly represented, but we need its methods as generic functions.
 
 
+```r
+draw <- function(object) UseMethod("draw")
+bounding_box <- function(object) UseMethod("bounding_box")
+```
 
-## Hierarchies and implementation reuse
+When constructing graphical objects we need to set their class, and these could be the constructors for the concrete classes:
 
+
+```r
+point <- function(x, y) {
+  object <- c(x, y)
+  class(object) <- "point"
+  names(object) <- c("x", "y")
+  object
+}
+
+rectangle <- function(x1, y1, x2, y2) {
+  object <- c(x1, y1, x2, y2)
+  class(object) <- "rectangle"
+  names(object) <- c("x1", "y1", "x2", "y2")
+  object
+}
+
+circle <- function(x, y, r) {
+  object <- c(x, y, r)
+  class(object) <- "circle"
+  names(object) <- c("x", "y", "r")
+  object
+}
+
+composite <- function(...) {
+  object <- list(...)
+  class(object) <- "composite"
+  object
+}
+```
+
+We just represent the graphical objects as vectors, except for the composite that we represent as a list so it can contain different types of other graphical objects. The points are just vectors of coordinates, the rectangles are represented by two coordinates, the rectangle's lower left and upper right corners, and circles are represented by a center point and a radius.
+
+For the `draw` methods we can just use basic graphics functions:
+
+
+```r
+draw.point <- function(object) {
+  points(object["x"], object["y"])
+}
+
+draw.rectangle <- function(object) {
+  rect(object["x1"], object["y1"], object["x2"], object["y2"])
+}
+
+draw.circle <- function(object) {
+  plotrix::draw.circle(object["x"], object["y"], object["r"])
+}
+
+draw.composite <- function(object) {
+  invisible(Map(draw, object))
+}
+```
+
+except for the circles where we use the `draw.circle` function from the `plotrix` package for convenience. For the collection class we just call `draw` on all of a collection's components. We wrap the call to `Map` in `invisible` because we don't want the function call to print a list when we call it, but otherwise it is straightforward. 
+
+With these functions we can construct plots of graphical elements, see +@fig:plotting-shapes-1.
+
+
+```r
+plot(c(0, 10), c(0, 10), 
+     type = 'n', axes = FALSE, xlab = '', ylab = '')
+draw(point(5,5))
+draw(rectangle(2.5, 2.5, 7.5, 7.5))
+draw(circle(5, 5, 4))
+
+corners <- composite(point(2.5, 2.5), point(2.5, 7.5),
+                     point(7.5, 2.5), point(7.5, 7.5))
+draw(corners)
+```
+
+![Plot of graphical elements.](figure/plotting-shapes-1-1.png){#fig:plotting-shapes-1}
+
+Here we have to set the size of the plot so it actually contains the elements we want to display there. Calculating what that area is, is what we have the `bounding_box` function for, and we can implement the different methods like this:
+
+
+```r
+bounding_box.point <- function(object) {
+  c(object["x"], object["y"], object["x"], object["y"])
+}
+
+bounding_box.rectangle <- function(object) {
+  c(object["x1"], object["y1"], object["x2"], object["y2"])
+}
+
+bounding_box.circle <- function(object) {
+  c(object["x"] - object["r"], object["y"] - object["r"],
+    object["x"] + object["r"], object["y"] + object["r"])
+}
+
+bounding_box.composite <- function(object) {
+  if (length(object) == 0) return(c(NA, NA, NA, NA))
+  
+  bb <- bounding_box(object[[1]])
+  x1 <- bb[1]
+  y1 <- bb[2]
+  x2 <- bb[3]
+  y2 <- bb[4]
+  
+  for (element in object) {
+    bb <- bounding_box(element)
+    x1 <- min(x1, bb[1])
+    y1 <- min(y1, bb[2])
+    x2 <- max(x2, bb[3])
+    y2 <- max(y2, bb[4])
+  }
+  
+  c(x1, y1, x2, y2)
+}
+```
+
+With that, we can collect all the graphical elements we wish to plot in a composite object and calculate the bounding box before we plot.
+
+```r
+all <- composite(
+  point(5,5),
+  rectangle(2.5, 2.5, 7.5, 7.5),
+  circle(5, 5, 4),
+  composite(point(2.5, 2.5), point(2.5, 7.5),
+            point(7.5, 2.5), point(7.5, 7.5))
+)
+bb <- bounding_box(all)
+plot(c(bb[1], bb[3]), c(bb[2], bb[4]),
+     type = 'n', axes = FALSE, xlab = '', ylab = '')
+draw(all)
+```
+
+## Class hierarchies as interfaces with refinements
+
+In the examples so far, we have had an abstract class defining and interface and then different concrete classes implementing it. In the case of the stack, the different implementations gave us different time-complexity tradeoffs, but the different implementations were conceptually all just stacks; in the case of the graphical objects the different concrete classes were conceptually different objects, just objects that can all be treated as graphical objects and thus manipulated through the general interface. These are common patterns in software design, but when sub-classes, such as the different types of graphical objects, represent different conceptual classes, they often also extend the interface.
+
+Take for instance statistical models. These are usually implemented as classes that implement a number of generic functions, such as `predict` or `coef`, that gives us a uniform interface to models and makes it possible to switch between different models in analysis without major rewrites of our analysis code. The generic functions implemented by all models gives us an interface for the most abstract kind of models — all models must implement `predict` and `coef`, for example, for us to be able to use them as drop-in replacements in our analysis code — but different types of models might add additional functionality to this interface that is not relevant for all models. We could, for example, imagine that decision trees add functionality for pruning trees, e.g. a function `prune`. If all decision tree implementations have a `prune` function, we can replace the implementation of decision trees and still reuse our code, but because `prune` is not implemented for all models we can only replace one implementation of a decision tree with another decision tree, not any kind of model. We would say that decision trees are specialisations of models. All decision trees are models but not all models are decision trees. In term of classes, we would have a super-class for models and a sub-class for decision trees that adds to the interface of models functions such as `prune`. If we have different implementations of decision trees, the decision tree class would typically also be abstract, and different implementations would inherit from this class rather than the more general model class, see +@fig:model-hierarchy.
+
+![Hierarchy of models where decision trees are specialisations of the *Model* class that adds the `prune` function and gives us an additional abstract class that instances of decision trees must implement.](figures/Model-hierarchy){#fig:model-hierarchy}
+
+As another example, we can consider a bibliography, which is essentially a list of publications. There are different kinds of publications but all have at least a name and one or more authors, so the most abstract way of representing publications would just have those two attributes. One thing we might want to do with a list of publications is to calculate bibliometrics such as how many citations a publication has. If each publication has a list of other works it cites, then we could calculate this from a database of all relevant publications. If we have a list of all publications a given author has created, we could also calculate how many citations this particular author has received or derived statistics such as the [h-index](https://en.wikipedia.org/wiki/H-index). 
+
+There are different types of publications, so we can create sub-classes for e.g. books and articles. A book will have an associated publisher and an ISBN while journal articles will have associated a journal and (typically) the page-numbers in the journal where the article can be found. If we, for simplicity, only allow those two types of publications we can represent it as the class hierarchy shown in  +@fig:bibliography-hierarchy.
+
+![Hierarchy of bibliography objects. The generic *Publication* class gives each publication a name and a list of authors and a list of other publications cited. Two concrete types of publications, *Article* and *Book*, adds extra attributes](figures/Bibliograph-hierarchy){#fig:bibliography-hierarchy}
+
+In this hierarchy, all the functions simply access attributes of objects, that is, they just extract data that is stored in these. Accessing attributes via functions, as opposed to extracting them from lists or vectors or however objects are implemented, is generally a good idea. It allows you to change how you represent data without having to change any code besides the accessor function. If your code only accesses your objects through functions then you have encapsulated the implementation details and updating your code later will be much simpler than it would otherwise be.
+
+Notice also that none of the accessor functions need to differ between the two concrete types of publications. The abstract *Publication* class accesses `name` and `authors` and the additional attributes provided in the other classes are disjunct. Because of this, there is no need to have generic functions for implementing this class hierarchy. We can do it using just plain old functions.
+
+```r
+# publication interface
+publication <- function(name, authors, citations) {
+  structure(list(name = name, authors = authors, 
+                 citations = citations),
+            class = "publication")
+}
+name <- function(pub) pub$name
+authors <- function(pub) pub$authors
+
+# articles
+article <- function(name, authors, citations, journal, pages) {
+  structure(list(name = name, authors = authors, 
+                 citations = citations,
+                 journal = journal, pages = pages),
+            class = c("article", "publication"))
+}
+journal <- function(pub) pub$journal
+pages <- function(pub) pub$pages
+
+# book
+book <- function(name, authors, citations, publisher, ISBN) {
+  structure(list(name = name, authors = authors, 
+                 citations = citations,
+                 publisher = publisher, ISBN = ISBN),
+            class = c("book", "publication"))
+}
+publisher <- function(pub) pub$publisher
+ISBN <- function(pub) pub$ISBN
+```
+
+Generic functions are perfect for getting different behaviour for a given operation for different classes, but when we can get the behaviour we desire using plain old functions there is no reason to invoke the more complicated type of functions.
+
+The implementation of publications is straightforward except when it comes to the `class` attributes set in the constructor functions. Here we set the classes to lists of class names instead of just the class names. This is how we specify that a `"book"` object or an `"article"` object is also a `"publication"` object. The design we have in mind requires that books and articles are publications, but since S3 classes are just names represented as strings, we cannot make this explicit in R. Instead we represent the class hierarchy by having the `class` attribute be lists of class names, going up the hierarchy from the most specialised to the most abstract object. How R interprets such a list of class names, and how it uses it to find the right implementations of generic functions, is the topic of the next chapter.
+
+It is not uncommon to have a class hierarchy similar to the one we made here for publications, but there are some slight problems with it. To access book-specific attributes you need to know that the object you are working on is a book; treating publications in aggregates without having to write specialised code for dealing with books or articles is the purpose of using object-orientation and having the publication hierarchy to begin with. There is nothing wrong with having a class hierarchy where sub-classes add functions to the interface of their super-class, but if you find yourself writing such a hierarchy you should think carefully about how objects from the hierarchy should be accessed and manipulated.
+
+It is generally best to put functions as high up in the hierarchy as it makes sense to do, thus insuring that as many classes from the hierarchy as possible will support them. With generic functions, the different sub-classes can implement the methods very differently, but all objects you manipulate will at least implement the methods you call them on. With the publication class hierarchy we have designed here, the only things we can really do if we want to write reusable code is to access names and authors and construct graphs of citations. The special attributes for books and articles are only available in a type-safe way if we explicitly check that we are accessing books and articles, respectively.
+
+We would probably like code to format publications for making publication lists and such. Here we would need the information stored in books and articles, but since accessing these directly requires that we first test the class of the objects, the code would be a bit cumbersome and likely also error prone. Worse, if we added another publication type to the hierarchy, for example conference contributions, we would need to update all code that does this class checking and handle the different classes in different ways to handle this type as well. Avoiding this is exactly why we need generic functions, so the right design would be to have a generic function for formatting citations and specialise it for the sub-classes.
+
+```r
+format <- function(publ) UseMethod("format")
+
+format.article <- function(publ) {
+  paste(name(publ), authors(publ), 
+        journal(publ), pages(publ), sep = ", ")
+}
+
+format.book <- function(publ) {
+  paste(name(publ), authors(publ), 
+        publisher(publ), ISBN(publ), sep = ", ")
+}
+```
+
+and we could then use this `format` function in another generic function, `print`, for displaying publications:
+
+```r
+print.publication <- function(x, ...) print(format(x))
+```
+
+When we sub-class in order to extend an interface we add functions that only a subset of objects will support. Sometimes this is necessary, when there are operations that truly only make sense for some objects — like pruning decision trees, where pruning something like a linear model is not meaningful — but as a general rule, I would suggest that you keep specialisation like this to a minimum. It might feel like a good design to have a large hierarchy of more or less specialised classes, but when you have to work with objects from the hierarchy you want them to be as similar as you can get them so you can treat all of them using the same (generic) functions, so you will in general want to stick to the most abstract interface in any case. You might as well design your code with that in mind.
+
+Being able to treat objects uniformly is also the reason we made a collection of graphical objects be a graphical object in itself. If we had not, then we would need to explicitly deal with collections of objects and write recursive functions to traverse them. By making the collection a class of graphical objects, we could hide this complexity in the generic functions. This is a very common trick and is called the [composite design pattern](https://en.wikipedia.org/wiki/Composite_pattern).

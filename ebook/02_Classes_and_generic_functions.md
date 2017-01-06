@@ -295,7 +295,7 @@ Plotting the time usage for various length of stacks makes it even more evident 
 
 
 
-![Time usage of reversal with two different stacks.](figure/unnamed-chunk-11-1.png)
+![Time usage of reversal with two different stacks.](figure/performance_plot-1.png){#fig:performance_plot}
 
 Only for very short stacks would the vector implementation be preferable — the quadratic versus linear running time kicks in for very small $n$ — but in general different implementations will be preferable for different usages, and by writing code that is polymorphic we make sure that we can change the implementation of a data structure without having to change the algorithms using it.
 
