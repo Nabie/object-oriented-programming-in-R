@@ -1,6 +1,6 @@
 # Classes and generic functions
 
-R’s approach to object oriented programming is through *generic functions* and *classes*. As mentioned in the introduction, R actually has three systems for implementing this, called S3, S4, and RC. In this chapter I will only describe the S3 system, which is the simplest of the three, but I will return to the other two systems in later chapters.
+R’s approach to object-oriented programming is through *generic functions* and *classes*. As mentioned in the introduction, R actually has three systems for implementing this, called S3, S4, and RC. In this chapter, I will only describe the S3 system, which is the simplest of the three, but I will return to the other two systems in later chapters.
 
 
 ## Generic functions
@@ -18,11 +18,11 @@ To have a base case for stacks we typically also want a way to
 * create an empty stack
 * check if a stack is empty
 
-These five operations defines what a stack *is*, but we can implement a stack in many different ways. Defining a stack by the operations we can do on stacks makes it an abstract data type. To implement a stack we need a concrete implementation.
+These five operations define what a stack *is*, but we can implement a stack in many different ways. Defining a stack by the operations, that we can do on stacks, makes it an abstract data type. To implement a stack we need a concrete implementation.
 
-In a statically typed programming language we would define the type of a stack by these operations. How this would be done depends on the type of programming language and the concrete language, but generally in statically typed functional languages you would define a *signature* for a stack — the functions and their type for the five operations — while in an object oriented language you would define an abstract super-class.
+In a statically typed programming language, we would define the type of a stack by these operations. How this would be done depends on the type of programming language and the concrete language, but generally in statically typed functional languages you would define a *signature* for a stack---the functions and their type for the five operations---while in an object oriented language you would define an abstract superclass.
 
-In R, the types are implicitly defined, but for a stack we would also define the five functions. These functions would be generic and not actually have any implementation in them; the implementation goes into the concrete implementation of stacks.
+In R, the types are implicitly defined, but for a stack, we would also define the five functions. These functions would be generic and not actually have any implementation in them; the implementation goes into the concrete implementation of stacks.
 
 Of the five functions defining a stack, one is special. Creating an empty stack does not work as a generic function. When we create a stack, we always need a concrete implementation. But the other four can be defined as generic functions. Defining a generic function is done using the `UseMethod` function, and the four functions can be defined as thus:
 
@@ -33,9 +33,9 @@ push <- function(stack, element) UseMethod("push")
 is_empty <- function(stack) UseMethod("is_empty")
 ```
 
-What `UseMethod` does here is tying the functions in the the S3 object oriented programming system. When it is called, it will look for a concrete implementation of a function and call it with the parameters the generic function was called with. We will see how this lookup works shortly.
+What `UseMethod` does here is dispatching to different concrete implementations of functions in the S3 object-oriented programming system. When it is called, it will look for an implementation of a function and call it with the parameters the generic function was called with. We will see how this lookup works shortly.
 
-When defining generic functions you can specify “default” functions as well. These are called when `UseMethod` cannot find a concrete implementation. These are mostly useful when it is possible to actually have some default behaviour that works in most cases, so not all concrete classes need to implement them, but it is a good idea to always implement them, even if all they do is inform you that an actual implementation wasn’t found.
+When defining generic functions, you can specify “default” functions as well. These are called when `UseMethod` cannot find a concrete implementation. These are mostly useful when it is possible actually to have some default behaviour that works in most cases, so not all concrete classes need to implement them, but it is a good idea always to implement them, even if all they do is inform you that an actual implementation wasn’t found.
 
 ```{r}
 top.default <- function(stack) .NotYetImplemented()
@@ -47,9 +47,9 @@ is_empty.default <- function(stack) .NotYetImplemented()
 
 ## Classes
 
-To make concrete implementations of abstract data types we need to use *classes*. In the S3 system you create a class, and assign a class to an object, just by setting an attribute on the object. The name of the class is all that defines it, so there is no real type checking involved. Any object can have an attribute called “class” and any string can be the name of a class.
+To make concrete implementations of abstract data types we need to use *classes*. In the S3 system, you create a class, and assign a class to an object, just by setting an attribute on the object. The name of the class is all that defines it, so there is no real type checking involved. Any object can have an attribute called “class” and any string can be the name of a class.
 
-We can make a concrete implementation of a stack using a vector.  To define the class we just need to pick a name for it. We can use `vector_stack`. We create such a stack using a function for creating an empty stack, and in this function we set the attribute “class” using the `class<-` modification function.
+We can make a concrete implementation of a stack using a vector.  To define the class we just need to pick a name for it. We can use `vector_stack`. We create such a stack using a function for creating an empty stack, and in this function, we set the attribute “class” using the `class<-` modification function.
 
 ```{r}
 empty_vector_stack <- function() {
@@ -64,7 +64,7 @@ attributes(stack)
 class(stack)
 ```
 
-The empty stack is a numeric vector, just because we need some type to give the empty vector, but pushing other values onto it will just force a type conversion, so we can put other basic types into it. It is limited to basic data types since vectors cannot contain complex data; for that we would need a list. If we need complex data we could easily change the implementation to use a list instead of a vector.
+The empty stack is a numeric vector, just because we need some type to give the empty vector, but pushing other values onto it will just force a type conversion, so we can also put other basic types into it. It is limited to basic data types since vectors cannot contain complex data; for that, we would need a list. If we need complex data, we could easily change the implementation to use a list instead of a vector.
 
 We will push elements by putting them at the front of the vector, pop elements by getting everything except the first element of the vector, and of course get the top of a vector by just indexing the first element. Such an implementation can look like this:
 
@@ -85,11 +85,11 @@ is_empty.vector_stack <- function(stack) length(stack) == 0
 
 You will notice that the names of the functions are composed of two parts. Before the “.” you have the names of the generic functions that define a stack, and after the “.” you have the class name. This name format has semantic meaning; it is how generic functions figure out which concrete functions should be called based on the data provided to them.
 
-When the generic functions call `UseMethod`, this function will check if the first value the generic function was called with has a class. If so, it will get the name of that class and see if it can find a function with the name of the generic function (the name parameter given to `UseMethod`, not necessarily the name of the function that calls `UseMethod`) before a “.” and the name of the class after the “.”. If so, it will call that function. If not, it will look for a `.default` suffix instead and call that function if it exists.
+When the generic functions call `UseMethod`, this function will check if the first value the generic function was called with has an associated class. If so, it will get the name of that class and see if it can find a function with the name of the generic function (the name parameter given to `UseMethod`, not necessarily the name of the function that calls `UseMethod`) before a “.” and the name of the class after the “.”. If so, it will call that function. If not, it will look for a `.default` suffix instead and call that function if it exists.
 
-This lookup mechanism gives semantic meaning to function names, and you really shouldn’t use “.”s in function names unless you want R to interpret the names in this way. The built in functions in R are not careful about this — R has a long history and is not terribly consistent in how functions are named — but if you want to accidentally implement a function that works as a concrete implementation of a generic function, you shouldn’t do it.
+This lookup mechanism gives semantic meaning to function names, and you really shouldn’t use “.”s in function names unless you want R to interpret the names in this way. The built-in functions in R are not careful about this---R has a long history and is not terribly consistent in how functions are named---but if you don't want to accidentally implement a function that works as a concrete implementation of a generic function, you shouldn’t do it.
 
-If we call `push` on a vector stack, it will therefore be `push.vector_stack` that will be called instead of `push.default`.
+If we call `push` on a vector stack, it will, therefore, be `push.vector_stack` that will be called instead of `push.default`.
 
 ```{r}
 stack <- push(stack, 1)
@@ -98,9 +98,9 @@ stack <- push(stack, 3)
 stack
 ```
 
-In the `push.vector_stack` we explicitly set the class of the concatenated new vector. If we didn’t do this, we would just be creating a vector — the stack-ness of the second argument to `c` does not carry on to the concatenated vector — and we wouldn’t return a stack. By setting the class of the new vector we make sure that we return a stack.
+In the `push.vector_stack` we explicitly set the class of the concatenated new vector. If we didn’t do this, we would just be creating a vector---the stack-ness of the second argument to `c` does not carry on to the concatenated vector---and we wouldn’t return a stack. By setting the class of the new vector, we make sure that we return a stack.
 
-The class isn’t preserved when we remove the first element of the vector either, which is why we also have to explicitly set the class in the `pop.vector_stack` function. Otherwise we would only have a stack the first time we pop an element and after that it would just be a plain vector. By explicitly setting the class we make sure that the function returns a stack that we can use with the generic functions again.
+The class isn’t preserved when we remove the first element of the vector either, which is why we also have to  set the class in the `pop.vector_stack` function explicitly. Otherwise, we would only have a stack the first time we pop an element, and after that, it would just be a plain vector. By explicitly setting the class we make sure that the function returns a stack that we can use with the generic functions again.
 
 ```{r}
 while (!is_empty(stack)) {
@@ -108,9 +108,9 @@ while (!is_empty(stack)) {
 }
 ```
 
-The remaining two functions, `top` and `is_empty` do not return a stack object, and they are not supposed to, so we don’t set the class attribute there.
+The remaining two functions, `top` and `is_empty`, do not return a stack object, and they are not supposed to, so we don’t set the class attribute there.
 
-We can avoid having to explicitly set the class attribute whenever we update it — that is, whenever we return a new value; we never actually modify an object here — by wrapping the class creation code in another function. Such a version could look like this:
+We can avoid having to set the class attribute explicitly whenever we update it---that is, whenever we return a new value; we never actually modify an object here---by wrapping the class creation code in another function. Such a version could look like this:
 
 ```{r}
 make_vector_stack <- function(elements) {
@@ -129,7 +129,7 @@ We are of course still setting the class attribute when we create an updated sta
 
 ## Polymorphism in action
 
-The point of having generic functions is, of course, that we can have different implementations of the abstract operations. For the stack, we can try a different implementation. The vector version has the drawback that each time we return a modified stack we need to create a new vector, which means copying all the elements in the new vector from the old. This makes the operations linear time in the vector size. Using a linked list we can make them constant time operations. Such an implementation can look like this:
+The point of having generic functions is, of course, that we can have different implementations of the abstract operations. For the stack, we can try a different representation. The vector version has the drawback that each time we return a modified stack we need to create a new vector, which means copying all the elements in the new vector from the old. This makes the operations linear time in the vector size. Using a linked list, we can make them constant time operations. Such an implementation can look like this:
 
 ```{r}
 make_list_node <- function(head, tail) {
@@ -153,11 +153,11 @@ stack <- push(stack, 3)
 stack
 ```
 
-Normally, when working with lists, we would use `NULL` as the base case to terminate a list. We cannot just wrap a list and use `NULL` this way when we need to associate a class with the element. You cannot set the class of `NULL`. So instead we wrap the actual list inside another list where we set the class attribute. The real data is in the `elements` of this list, but except for having to use this list element of the object we just work with the list representation as we normally would with linked lists.
+Generally, when working with lists, we would use `NULL` as the base case to terminate a list. We cannot just wrap a list and use `NULL` this way when we need to associate a class with the element. You cannot set the class to `NULL`. So instead we wrap the actual list inside another list where we set the class attribute. The real data is in the `elements` of this list, but except for having to use this list element of the object we just work with the list representation as we normally would with linked lists.
 
-We now have two different implementations of the stack interface, but — and this is the whole point of having generic functions — code that uses a stack does not need to know which implementation it is operating on, as long as it only access stacks through the generic interface.
+We now have two different implementations of the stack interface, but---and this is the whole point of having generic functions---code that uses a stack does not need to know which implementation it is operating on, as long as it only accesses stacks through the generic interface.
 
-We can see this in action in the small function below that reverses a sequence of elements by first pushing them all onto a stack and then pop’ing them off again.
+We can see this in action in the small function below that reverses a sequence of elements by first pushing them all onto a stack and then popping them off again.
 
 ```{r}
 stack_reverse <- function(empty, elements) {
@@ -177,9 +177,9 @@ stack_reverse(empty_vector_stack(), 1:5)
 stack_reverse(empty_list_stack(), 1:5)
 ```
 
-Since the `stack_reverse` function only refers to the concrete stacks through the abstract interface we can give it either a vector stack or a list stack and it can do the same operations on both. As long as the concrete data structures all implement the abstract interface correctly then code that only uses the generic functions will be able to work on any implementation.
+Since the `stack_reverse` function only refers to the concrete stacks through the abstract interface, we can give it either a vector stack or a list stack, and it can do the same operations on both. As long as the concrete data structures all implement the abstract interface correctly then code that only uses the generic functions will be able to work on any implementation.
 
-One single concrete implementation is rarely superior in all cases, so it makes sense that we are able to combine algorithms working on abstract data types with concrete implementations depending on the concrete problem we need to solve. For the two stack implementations they generally work equally well, but as discussed above, the stack implementation has a worst-case quadratic running time while the list implementation has a linear running time. For large stacks, we would thus expect the list implementation to be the best choice, but for small stacks there is more overhead in manipulating the list implementation the way we do — having to do with looking up variable names and linking lists and such — so for short stacks the vector implementation is faster.
+One single concrete implementation is rarely superior in all cases, so it makes sense that we are able to combine algorithms working on abstract data types with concrete implementations depending on the particular problem we need to solve. For the two stack implementations they generally work equally well, but as discussed above, the stack implementation has a worst-case quadratic running time while the list implementation has a linear running time. For large stacks, we would thus expect the list implementation to be the best choice, but for small stacks, there is more overhead in manipulating the list implementation the way we do---having to do with looking up variable names and linking lists and such---so for short stacks, the vector implementation is faster.
 
 ```{r microbenchmark_stacks, cache=TRUE}
 library(microbenchmark)
@@ -189,7 +189,7 @@ microbenchmark(stack_reverse(empty_vector_stack(), 1:1000),
                stack_reverse(empty_list_stack(), 1:1000))
 ```
 
-Plotting the time usage for various length of stacks makes it even more evident that, as the stack gets longer, the list implementation gets relatively faster.
+Plotting the time usage for various length of stacks makes it even more evident that, as the stacks get longer, the list implementation gets relatively faster than the vector implementation.
 
 ```{r performance_plotting_stacks, cache=TRUE, echo=FALSE}
 library(tibble)
@@ -219,20 +219,20 @@ ggplot(times) +
   theme(legend.position = "bottom")
 ```
 
-Only for very short stacks would the vector implementation be preferable — the quadratic versus linear running time kicks in for very small $n$ — but in general different implementations will be preferable for different usages, and by writing code that is polymorphic we make sure that we can change the implementation of a data structure without having to change the algorithms using it.
+Only for very short stacks would the vector implementation be preferable---the quadratic versus linear running time kicks in for very small $n$---but in general, different implementations will be preferred for different usages. By writing code that is polymorphic, we make sure that we can change the implementation of a data structure without having to modify the algorithms using it.
 
 ## Designing interfaces
 
-It is not just generic functions that are polymorphic. Any function that manipulate data only through generic functions is also polymorphic. The reversal function we implemented using a stack takes the empty stack as an argument, and this empty stack determines which actual stack implementation we use. Nowhere in the function do we refer to any details of an actual implementation. If we had, instead, created an empty stack inside this function then, despite otherwise only accessing the implementation through the generic functions interface, the function would be bound to a single implementation.
+It is not just generic functions that are polymorphic. Any function that manipulates data only through generic functions is also polymorphic. The reversal function we implemented using a stack takes the empty stack as an argument, and this empty stack determines which actual stack implementation we use. Nowhere in the function do we refer to any details of a real implementation. If we had, instead, created an empty stack inside this function then, despite otherwise only accessing the implementation through the interface of the generic functions, the function would be bound to a single implementation.
 
-To get the most out of polymorphism you will want to design your functions to be as polymorphic as possible. This requires two things:
+To get the most out of polymorphism, you will want to design your functions to be as polymorphic as possible. This requires two things:
 
 1. Don’t refer to concrete implementations unless you really have to.
 2. Any time you *do* have to refer to implementation details of a concrete type, do so through a generic function.
 
-The reversal function is polymorphic because it doesn’t refer to any concrete implementation. The choice of which concrete stack to use is determined by a parameter, and the operations it does on the concrete stack all goes through generic functions.
+The reversal function is polymorphic because it doesn’t refer to any concrete implementation. The choice of which concrete stack to use is determined by a parameter, and the operations it performs on the specific stack implementation all goes through generic functions.
 
-It can be very tempting to break these rules in the heat of programming. Using a parameter to determine data structures in an algorithm isn’t that difficult to do, but if you are writing an algorithm that uses several different data structures you might not want to have all the different concrete implementations as parameters. You really aught to do it, though. Just write a function that wraps the algorithm and provides implementations if you don’t want to remember all the concrete data structures where the algorithm is needed. That way you get the best of both worlds.
+It can be very tempting to break these rules in the heat of programming. Using a parameter to determine data structures in an algorithm isn’t that difficult to do, but if you are writing an algorithm that uses several different data structures you might not want to have all the different concrete implementations as parameters. You really ought to do it, though. Just write a function that wraps the algorithm and provides implementations if you don’t want to remember all the concrete data structures where the algorithm is needed. That way you get the best of both worlds.
 
 More often, you will want to access the details of a concrete implementation. Imagine, for example, that you want to pop elements until you see a specific one, but *only* if that element is on the stack. If we are used to working with the vector implementation of the stack, then it would be natural to write a function like this:
 
@@ -255,7 +255,7 @@ pop_until(vector_stack, 5)
 
 Here we use the `%in%` function to test if the element is on the stack (and we use the `magrittr` pipe operator to create a stack for our test). This works fine, as long as the stack is a vector stack, but it will *not* work if the stack is implemented as a list. You won’t get an error message, the `%in%` test will just always return `FALSE`, so if you replace the stack implementation you have incorrect code that doesn’t even inform you that it isn’t working.
 
-Relying on implementation details is the worst breakage of the interface to polymorphic objects that you can do. Not only do you tie yourself in to a single implementation, but you also tie yourself into exactly how that concrete data is implemented. If that implementation changes, your algorithm using it will break. So now you either can’t change the implementation or you will have to change the algorithm that uses when it does. If you are lucky, you might get an error message if you break the interface, but as in the case we just saw (and you can try it yourself if you don’t believe me), you won’t even get that. The function will just always return the original stack, even when the element you want to pop to is on it.
+Relying on implementation details is the worst you can do to break the interface of polymorphic objects. Not only do you tie yourself into a single implementation, but you also tie yourself into exactly how that concrete data is implemented. If that implementation changes, your algorithm using it will break. So now you either can’t change the implementation, or you will have to change the algorithm that uses when it does. If you are lucky, you might get an error message if you break the interface, but as in the case we just saw (and you can try it yourself if you don’t believe me), you won’t even get that. The function will just always return the original stack, even when the element you want to pop to is on it.
 
 ```r
 list_stack <- empty_list_stack() %>%
@@ -283,37 +283,37 @@ contains.default <- function(stack, element) .NotYetImplemented()
 contains.vector_stack <- function(stack, element) element %in% stack
 ```
 
-You do not need to implement concrete functions for all implementations of an abstract data type to add a generic function. If you have a default implementation that gives you an error — and you have proper unit tests for any code you use — you will get an error if your algorithm attempts to use the function if it isn’t implemented yet, and you can add it at that point.
+You do not need to implement concrete functions for all implementations of an abstract data type to add a generic function. If you have a default implementation that gives you an error---and you have proper unit tests for any code you use---you will get an error if your algorithm attempts to use the function if it isn’t implemented yet, and you can add it at that point.
 
-Adding new generic functions is not as ideal as using the original interface in the first place if the abstract data type is from another package, because that package might change the details of the implementation at which point your new generic function might break — and might break silently. Still, combined with proper unit tests, it is a much better solution than simply accessing the detailed implementation in your other functions.
+Adding new generic functions is not as ideal as using the original interface in the first place if the abstract data type is from another package. If the implementation in that package changes at a later point, your new generic function might break---and might break silently. Still, combined with proper unit tests, it is a much better solution than simply accessing the detailed implementation in your other functions.
 
-Designing interfaces is a bit of an art. When you create your own abstract types you want to think carefully about which operations the type should have. You don’t want to have too many operations. That would make it harder for people implementing other versions of type; they would need to implement all the operations, and depending on what those operations are, this could involve a lot of work. On the other hand, you can’t have too few operations, because then algorithms using the type will often have to break the interface to get to implementation details, which will break the polymorphism of those algorithms.
+Designing interfaces is a bit of an art. When you create your own abstract types, you want to think carefully about which operations the type should have. You don’t want to have too many operations. That would make it harder for people implementing other versions of type; they would need to implement all the operations, and depending on what those operations are, this could involve a lot of work. On the other hand, you can’t have too few operations, because then algorithms using the type will often have to break the interface to get to implementation details, which will break the polymorphism of those algorithms.
 
-The abstract data types you learn about in an algorithms class are good examples of minimal yet powerful interfaces. They define the minimal number of operations necessary to get useful work done, yet still make implementations of concrete stacks, queues, dictionaries, etc. possible with minimal work.
+The abstract data types you learn about in an algorithms class are good examples of minimal yet powerful interfaces. They define the minimum number of operations necessary to get useful work done, yet still make implementations of concrete stacks, queues, dictionaries, etc. possible with minimal work.
 
 When designing your own types, try to achieve the same kind of minimal interfaces.
 
 ## The usefulness of polymorphism
 
-Polymorphism isn’t only useful for what we would traditionally call abstract data structures. Polymorphism gives you the means to implement abstract data structures so algorithms work on the abstract interface and never need to know which concrete implementation they are operating on, but generic functions are useful for many cases that we do not traditionally think of as data structures.
+Polymorphism isn’t only useful for what we would traditionally call abstract data structures. Polymorphism gives you the means to implement abstract data structures, so algorithms work on the abstract interface and never need to know which concrete implementation they are operating on, but generic functions are useful for many cases that we do not traditionally think of as data structures.
 
-In R, you often fit statistical models to data. Such models are not really data structures, but there is an abstract interface to them. You fit a concrete model, for example a linear model, but once you have a fitted model there are many common operations that are useful for all models. You might want to predict response variables for new data or you might want to get the residuals of your fitted values. These operations are the same for all models — although how different models implement the operations will be different — and so they can benefit from being generic. Indeed they are. The functions `predict` and `residuals`, which implements those two operations, are generic functions, and each model can implement its own version of them.
+In R, you often fit statistical models to data. Such models are not really data structures, but there is an abstract interface to them. You fit a concrete model, for example, a linear model, but once you have a fitted model, there are many common operations that are useful for all models. You might want to predict response variables for new data, or you might want to get the residuals of your fitted values. These operations are the same for all models---although how different models implement the operations will be different---and so they can benefit from being generic. Indeed they are. The functions `predict` and `residuals`, which implements those two operations, are generic functions, and each model can implement its own version of them.
 
-There is a long list of common functions that are frequently used on fitted models, and all of these are implemented as generics. If you write analysis code that operate on fitted models using only those generic functions, you can change the model at any time and reuse all the code without modifying it.
+There is an extensive list of standard functions that are frequently used on fitted models, and all of these are implemented as generics. If you write analysis code that operates on fitted models using only those generic functions, you can change the model at any time and reuse all the code without modifying it.
 
-The same goes for printing and plotting functions. Both `print` and `plot` are generic functions and they have concrete implementations for different data types (and usually also for different fitted models). It is not something we think much about from day to day, but if we didn’t have generic functions like these we would need to use different functions for displaying vectors and for displaying matrices, for example.
+The same goes for printing and plotting functions. Both `print` and `plot` are generic functions, and they have concrete implementations for different data types (and usually also for different fitted models). It is not something we think much about from day to day, but if we didn’t have generic functions like these, we would need to use different functions for displaying vectors and for displaying matrices, for example.
 
-Converting between different data types is also a common operation, and again polymorphism is highly useful (and frequently used in R). To translate a data structure into a vector, you use the `as.vector` function — an unfortunate name since it looks like a generic function `as` with a specialisation for `vector`, but actually is a generic function named `as.vector`. To translate a factor into a vector, it is the concrete implementation `as.vector.factor` that gets called.
+Converting between different data types is also a frequent operation, and again polymorphism is highly useful (and frequently used in R). To translate a data structure into a vector, you use the `as.vector` function---an unfortunate name since it looks like a generic function `as` with a specialisation for `vector`, but actually is a generic function named `as.vector`. To translate a factor into a vector, it is the concrete implementation `as.vector.factor` that gets called.
 
 An algorithm that needs to translate some input data into a vector can use the `as.vector` function and then doesn’t have to worry about what the actual data is implemented as. As long as the data type has an implementation of the `as.vector` function.
 
 ## Polymorphism and algorithmic programming
 
-Polymorphism as a component of designing algorithms, and especially implementing algorithms, is not often covered in classes and text books, but can be an important aspect of writing reusable software. Take something as simple as a sorting function. For many sorting algorithms, all you need to be able to for sorting elements is to determine whether one element is smaller than another. If you hardwire in an implementation of such an algorithm that the comparison used is interfering or floating point comparison, then you can only sort objects of these types. In general, if you hardwire comparisons, you need a different implementation for each type of elements you want to sort.
+Polymorphism as a component of designing algorithms, and especially implementing algorithms, is not often covered in classes and textbooks but can be an important aspect of writing reusable software. Take something as simple as a sorting function. For many sorting algorithms, all you need to be able to for sorting elements is to determine whether one element is smaller than another. If you hardwire in an implementation of such an algorithm that the comparison used is interfering or floating point comparison, then you can only sort objects of these types. In general, if you hardwire comparisons, you need a different implementation for each type of elements you want to sort.
 
-Because of this, most languages provide you with a generic sorting function as part of their runtime library where you can provide the comparison functionality it should use, typically either as a function provided to the function or by allowing you to specify a comparison function for new types. Unfortunately, the `sort` function in R is not of this kind — it does allow you to define sorting for new types but it wants its input to be in atomic form, so you cannot give it sequences of complex data types. Usually, you can change your data to a matrix or such and sort it this way, but if you actually have a list of complex data, you cannot use it.
+Because of this, most languages provide you with a generic sorting function as part of their runtime library where you can provide the comparison functionality it should use, typically either as a function provided to the function or by allowing you to specify a comparison function for new types. Unfortunately, the `sort` function in R is not of this kind---it does allow you to define sorting for new types, but it wants its input to be in atomic form, so you cannot give it sequences of complex data types. Usually, you can change your data to a matrix or such and sort it this way, but if you actually have a list of complex data, you cannot use it.
 
-We can easily implement our own function for doing this, however, and we can call it `sort_list` — not to be confused with the builtin function `sort.list` that actually does something else than sort lists…
+We can easily implement our own function for doing this, however, and we can call it `sort_list`---not to be confused with the built-in function `sort.list` that actually does something else than sort lists…
 
 ### Sorting lists
 
@@ -342,7 +342,7 @@ sort_list <- function(x) {
 }
 ```
 
-It gets the job done, but the merge function is quadratic in running time since it copies lists when it subscripts like `x[-1]` and `y[-1]` and when it combines the results in the recursive calls. We can make a slightly more complicated function that does the merging in linear time using a iterative approach rather than a recursive:
+It gets the job done, but the merge function is quadratic in running time since it copies lists when it subscripts like `x[-1]` and `y[-1]` and when it combines the results in the recursive calls. We can make a slightly more complicated function that does the merging in linear time using an iterative approach rather than a recursive:
 
 ```{r}
 merge_lists <- function(x, y) {
@@ -376,7 +376,7 @@ merge_lists <- function(x, y) {
 
 We are still copying in the recursive calls of the sorting function, but we are not copying more than we will merge later, so the asymptotic running time is okay at least.
 
-With this function we can sort lists of elements where `` `<` `` can be used to determine if one element is less than another. The builtin `` `<` `` function, however, doesn’t necessarily work on your own classes.
+With this function, we can sort lists of elements where `` `<` `` can be used to determine if one element is less than another. The built-in `` `<` `` function, however, doesn’t necessarily work on your own classes.
 
 ```{r}
 make_tuple <- function(x, y) {
@@ -491,9 +491,9 @@ We make the default `less` function `` `<` `` but can provide another for types 
 
 ### General comments on flexible implementations of algorithms
 
-As a general rule, you want to make your algorithm implementations adaptable by providing handles for polymorphism. Either by providing options for certain functions, like we did with `less` above, or by using generic functions for abstract data types.
+As a general rule, you want to make your algorithm implementations adaptable by providing handles for polymorphism. Either by providing options for certain functions, like we did with `less` above or by using generic functions for abstract data types.
 
-You might be able to experiment to optimal data structures and implementation of operations when you implement an algorithm for a given use, but by providing handles for modifying your function you make the code more reusable. Even in cases where the algorithm will function correctly for different uses, you might still want to provide flexibility; the performance of algorithms often depend on on the usage. In asymptotic analysis we generally prefer implementations that have theoretical better running times, but in practise we want the fastest code and that is not necessarily the asymptotically fastest algorithms. We hide away constants when we use “big-O” analysis, but those constants matter, so you want users of your implementations to be able to replace data structures and operations used in your algorithm implementations.
+You might be able to experiment with optimal data structures and implementation of operations when you implement an algorithm for a given use, but by providing handles for modifying your function you make the code more reusable. Even in cases where the algorithm will perform correctly for different applications, you might still want to provide flexibility; the performance of algorithms often depend on the usage. In an asymptotic analysis we generally prefer implementations that have theoretical better running times, but in practise, we want the fastest code, and that is not necessarily the asymptotically fastest algorithms. We hide away constants when we use “big-O” analysis, but those constants matter, so you want users of your implementations to be able to replace data structures and operations used in your algorithm implementations.
 
 Figuring out how to best provide this flexibility in your implementations often require some experimentation. For abstract data structures, generic functions are usually the best approach. For something like comparison in the sorting example above, all three solutions (generic functions, operator overloading, or providing a function with a good default) are probably equally good. But just like experimentation and some thinking is involved in designing good software interfaces, the same is needed in algorithmic programming.
 
@@ -518,11 +518,11 @@ bar.numeric <- function(object) x + object
 bar(4)
 ```
 
-Here the `foo` function uses the pattern we saw earlier. It just calls `UseMethod`. We then define a concrete function to be called if `foo` is invoked on a number. Numbers have classes, and that class is `numeric`. (Technically, there is more to numbers than this class, but for now we don’t need to worry about that). Nothing strange is going on with `foo`.
+Here the `foo` function uses the pattern we saw earlier. It just calls `UseMethod`. We then define a concrete function to be called if `foo` is invoked on a number. Numbers have classes, and that class is `numeric`. (Technically, there is more to numbers than this class, but for now, we don’t need to worry about that). Nothing strange is going on with `foo`.
 
-With `bar`, however, we assign a local variable before we invoke `UseMethod`. This variable, `x`, is visible when `bar.numeric` is called. With a normal function call, you have to take steps to get access to the calling scope, so here `UseMethod` does not behave as a normal function.
+With `bar`, however, we assign a local variable before we invoke `UseMethod`. This variable, `x`, is visible when `bar.numeric` is called. With a normal function call, you have to take steps to get access to the calling scope, so here `UseMethod` does not behave like a normal function.
 
-In the call to `UseMethod` it doesn’t behave like a normal function either. You cannot use `UseMethod` as part of an expression.
+In the call to `UseMethod`, it doesn’t behave like a normal function either. You cannot use `UseMethod` as part of an expression.
 
 ```{r}
 baz <- function(object) UseMethod("baz") + 2
@@ -530,6 +530,6 @@ baz.numeric <- function(object) object
 baz(4)
 ```
 
-When `UseMethod` is invoked, the concrete function takes over completely, and the call to `UseMethod` never returns. Any expression you put `UseMethod` in is not evaluated because of this, and any code you might put after the `UseMethod` call is never evaluated.
+When `UseMethod` is invoked, the concrete function takes over completely, and the call to `UseMethod` never returns. In this way, it is similar to the `return` function. Any expression you put `UseMethod` in is not evaluated because of this, and any code you might put after the `UseMethod` call is never evaluated.
 
-`UseMethod` takes a second argument, besides the name of the generic function. This is the object that is used to dispatch the generic function on — the object whose type determines the concrete function that will be called — and this argument can be used if you do not want to dispatch based on the first argument of the function that calls `UseMethod`. Since dispatching on the type of the first function argument is such a common pattern, using another object in the call to `UseMethod` can cause confusion, and I recommend that you do not do this unless you have very good reasons for it.
+The `UseMethod` function takes a second argument, besides the name of the generic function. This is the object that is used to dispatch the generic function on---the object whose type determines the concrete function that will be called---and this argument can be used if you do not want to dispatch based on the first argument of the function that calls `UseMethod`. Since dispatching on the type of the first function argument is such a common pattern, using another object in the call to `UseMethod` can cause confusion, and I recommend that you do not do this unless you have very good reasons for it.
