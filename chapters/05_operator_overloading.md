@@ -1,18 +1,18 @@
 # Operator overloading
 
-Overloading operators, that is, giving operators such as plus or minus new or additional functionality, is not inherently object-oriented, but since it can be thought of as adding polymorphism to functions it fits in naturally here, after we have gone through polymorphism through generic functions.
+Overloading operators, that is, giving operators such as `+` or `-` new or additional functionality, is not inherently object-oriented, but since it can be thought of as adding polymorphism to functions it fits in naturally here after we have gone through polymorphism through generic functions.
 
-Opinions vary in whether overloading operators is good or bad practise. Some languages allow it, others do not; some languages allow you to make your own infix operators but not change existing once, and some languages are just inconsistent in allowing some operator overloading for built-in objects but not for user-defined. One argument against overloading is the expected behaviour of operators. It is so ingrained in us to expect `+` to mean addition that we cannot handle if it also means string concatenation. This argument, of course, ignores that we have no problem with using `+` for both integer and floating point addition. Another, and in my opinion more valid, argument is that it is harder to remember what an operator does than what a function does, since the function name at least gives us some hint as to the function's function. The truth is that infix operators, when used carefully, can give us a more convenient syntax than simple function calls. You probably find `2 * x + 5` easier to read than `plus(times(2, x), 5)`, and most programming languages, with Lisp dialects a noticeable except, prefer the former to the latter. The same goes for user-defined or user-overloaded operators. Using `magrittr`'s pipe operator, `%>%`, makes analysis workflows much easier to read, and `ggplot2`'s overloading of `+` makes plotting code much easier to read.
+Opinions vary on whether overloading operators is good or bad practise. Some languages allow it, others do not; some languages allow you to make your own infix operators but not change existing once, and some languages are just inconsistent in allowing some operator overloading for built-in objects but not for user-defined. One argument against overloading is the expected behaviour of operators. It is so ingrained in us to expect `+` to mean addition that we cannot handle if it also means string concatenation. This argument, of course, ignores that we have no problem with using `+` for both integer and floating point addition. Another argument, and in my opinion a more valid one, is that it is harder to remember what an operator does than what a function does since the function name at least gives us some hint as to the function's purpose. The truth is that infix operators, when carefully used, can provide us with a more convenient syntax than simple function calls. You probably find `2 * x + 5` easier to read than `plus(times(2, x), 5)`, and most programming languages, with Lisp dialects a noticeable except, prefer the former to the latter. The same goes for user-defined or user-overloaded operators. Using `magrittr`'s pipe operator, `%>%`, makes analysis workflows much easier to read, and `ggplot2`'s overloading of `+` makes plotting code much easier to read.
 
-Since, in R, you can both overload existing operators and create your own, you have to choose which is most appropriate for any given situation. My rule of thumb is to prefer creating new infix operators unless it feels natural to use an existing one. That is, of course, a terribly subjective evaluating, but some operations just feels like "addition" — I would say combining operations in `ggplot2` can be justified as such — while others don't — like pipeline operations in `magritte`. It is a judgment call, and you can always experiment with your code to see what comes naturally.
+Since, in R, you can both overload existing operators and create your own, you have to choose which is most appropriate for any given situation. My rule of thumb is to prefer new infix operators unless it feels natural to use an existing one. That is, of course, a terribly subjective evaluating, but some operations just seem like "addition"---I would say combining operations in `ggplot2` can be justified as such---while others don't---like pipeline operations in `magritte`. It is a judgment call, and you can always experiment with your code to see what you feel is most natural.
 
-In this chapter we will see how we can overload operators. I will not cover how you create infix operators. If you are interested, I cover it in my *Functional Programming in R* book.
+In this chapter, we will see how we can overload operators. I will not cover how you create infix operators. If you are interested, I describe those it in my *Functional Programming in R* book.
 
 ## Functions and operators
 
-Every operation in R involves a function call. Control structures, subscripting, even parenthesis involve functions, and, naturally, operators involve function calls as well. This means that operators can be overridden. You can replace one implementation of `+` with another just by defining a new version of `+`. But you really shouldn't. Replacing the built-in operators with user-defined will affect all your code, seriously slow it down, and is very likely to introduce hard-to-find bugs. You don't have to do this to define operators for your own classes, though. The operators are generic and you can define specialised version of them, defining how operators should handle new classes you define.
+Every operation in R involves a function call. Control structures, subscripting, even parenthesis involve functions, and, naturally, operators involve function calls as well. This means that operators can be overridden. You can replace one implementation of `+` with another just by defining a new version of `+`. But you really shouldn't. Replacing the built-in operators with user-defined will affect all your code, slow it down, and is very likely to introduce hard-to-find bugs. You don't have to do this to define operators for your own classes, though. The operators are generic, and you can define specialised versions of them, implementing how any operator should handle new classes you define.
 
-To illustrate how this is done, we define a class for arithmetic modulus some number `n`. Here I assume that `value` is some numeric type -- in production code we would write tests for this, but in the example we just implicitly assume this -- and we use an attribute to store the number `n`. We then compute the value modulus `n`, set the class, and return the result.
+To illustrate how this is done, we define a class for arithmetic modulus some number `n`. Here I assume that `value` is some numeric type---in production code, we would write tests for this, but in the example, we just implicitly assume this---and we use an attribute to store the number `n`. We then compute the value modulus `n`, set the class, and return the result.
 
 ```{r}
 modulus <- function(value, n) {
@@ -23,7 +23,7 @@ modulus <- function(value, n) {
 }
 ```
 
-To pretty-print values of the class we define the `print` method. We want to print values, `x`, using the underlying type but with a line above giving us `n`. If we just call `print(x)` we would recurse back to `print.modulus` since that is the type of `x`, but we can use the function `unclass` to get rid of the type of `x`. It doesn't completely get rid of the type, though. If `x` is a numeric type, `unclass` just reduce `x` to that. When we print primitive values with attributes the attributes are printed as well, so we get rid of all attributes before we print the reduced `x`. Here we could directly call `print(x)` but `NextMethod()` works as well, so that is what I have used here.
+To pretty-print values of the class, we define the `print` method. We want to print values, `x`, using the underlying type but with a line above giving us `n`. If we just call `print(x)` we would recurse back to `print.modulus` since that is the type of `x`, but we can use the function `unclass` to get rid of the type of `x`. It doesn't completely get rid of the type, though. If `x` is a numeric type, `unclass` just reduce `x` to that. When we print primitive values with attributes the attributes are printed as well, so we get rid of all attributes before we print the reduced `x`. Here we could directly call `print(x)` but `NextMethod()` works as well, so that is what I have used here.
 
 ```{r}
 print.modulus <- function(x, ...) {
@@ -50,9 +50,9 @@ We can define what addition means for this type by defining the function `` `+.m
 }
 ```
 
-We first get `n` from `x`. Then we remove the class information from the two operands so we can call the primitive `+` to calculate their sum -- if we didn't do this we would again recurse when we tried to add `x` to `y` -- and we then simply calculate the result and use the `modulus` constructor to return it with the right type.
+We first get `n` from `x`. Then we remove the class information from the two operands so we can call the primitive `+` to calculate their sum. If we didn't do this, we would again recurse when we tried to add `x` to `y`, and we then simply calculate the result and use the `modulus` constructor to return it with the right type.
 
-Dispatch of such operator functions work a little different from the generic functions we have seen earlier. There, the dispatch is based on the type of the first argument, at least unless you explicitly state otherwise, but for operators the dispatch is based on the type of both operands. If both have a class that implements an operator they must have the same class. If only one of them have a class, and here primitive classes such as `"numeric"` or `"integer"` do not count, then the dispatch is based on that. So if `x` is of type `"modulus"` then both `x + 1:6` and `1:6 + x` will call `` `+.modulus` ``.
+Dispatching of such operator-functions works a little different from the generic functions we have seen earlier. There, the dispatch is based on the type of the first argument, at least unless you explicitly state otherwise, but for operators, the dispatch is based on the type of both operands. If both have a class that implements an operator, they must have the same class. If only one of them have a class, and here primitive classes such as `"numeric"` or `"integer"` do not count, then the dispatch is based on that. So if `x` is of type `"modulus"` then both `x + 1:6` and `1:6 + x` will call `` `+.modulus` ``.
 
 ```{r}
 x + 1:6
@@ -105,7 +105,7 @@ x + y
 
 Using generic functions, we can define all relevant operators for a user-defined type, but it is also possible to handle all operators in a single function, `Ops`. This function is called a "group generic method" because it handles a group of generic functions; other group methods are `Math`, `Complex`, and `Summary`, which we will not cover here.
 
-If we define the function `Ops.modulus` it will be called for all operators of `modulus` objects where the operator function is not defined. That is, if we have defined `` `+.modulus` `` as above, that function will be preferred over `Ops.modulus`, but otherwise, if one or both of the operands are of type `modulus`, then `Ops.modulus` will be called.
+If we define the function `Ops.modulus`, it will be called for all operators of `modulus` objects where the operator function is not defined. That is, if we have defined `` `+.modulus` `` as above, that function will be preferred over `Ops.modulus`, but otherwise, if one or both of the operands are of type `modulus`, then `Ops.modulus` will be called.
 
 We can define it like this:
 
@@ -122,7 +122,7 @@ Ops.modulus <- function(e1, e2) {
 }
 ```
 
-The testing at the beginning of the function is the same as for `` `+.modulus` ``. After the testing we use `NextMethod` to call the operation using the underlying type. This strips the `modulus` class from the operands and evaluate whatever operation we are currently handling. We unclass the result, necessary because the result will inherit the attributes of the operands of `Ops` so if we don't the result will have class `modulus`, and we then compute modulus `n`. If we didn't `unclass`, this would be a recursive call, but since we do remove the class we just do modulus in the underlying type. We finally create a `modulus` object of the result.
+The testing of input values at the beginning of the function is the same as for `` `+.modulus` ``. After the testing, we use `NextMethod` to call the operation using the underlying type. This strips the `modulus` class from the operands and evaluates whatever operation we are currently handling. We unclass the result, necessary because the result will inherit the attributes of the operands of `Ops` so if we don't the result will have class `modulus`, and we then compute modulus `n`. If we didn't `unclass`, this would be a recursive call, but since we do remove the class we just do modulus in the underlying type. We finally create a `modulus` object of the result.
 
 With this function defined we get all binary operators in one go.
 
@@ -147,7 +147,7 @@ It even includes unary operators. If we use a unary minus, however, the argument
 - x
 ```
 
-We can easily fix this, however, byt checking if `e2` is missing. Otherwise, the function will work as it is.
+We can easily fix this, however, by checking if `e2` is missing. Otherwise, the function will work as it is.
 
 ```{r}
 Ops.modulus <- function(e1, e2) {
@@ -167,9 +167,9 @@ Ops.modulus <- function(e1, e2) {
 
 ## Units example
 
-For a slightly more involved example, we define a class for associating physical units with values. This will allow us to check that units we manipulate are compatible -- so we do not subtract meters from seconds and such -- and will do unit analysis as part of arithmetic operations. The example is a simplified version of the package [units](https://github.com/edzer/units). The `units` package also hands unit conversion and unit simplification. Here we just implement a simple arithmetic of symbolic units and simple equality check of them.
+For a slightly more involved example, we define a class for associating physical units with values. This will allow us to check that units we manipulate are compatible---so we do not subtract meters from seconds and such---and will do unit analysis as part of arithmetic operations. The example is a simplified version of the package [units](https://github.com/edzer/units). The `units` package also hands unit conversion and unit simplification. Here we just implement a simple arithmetic of symbolic units and simple equality check of them.
 
-The idea is to have a representation of physical units and then associate these to numeric values. Physical units, here, refers to units like square kilometres, metres per second, etc. In general, these will be symbolic expressions, but we will only consider the slightly simpler situation where the units are a fraction of physical constants. In that case, we can represent these as a list of terms in the nominator and a list of terms in the denominator. If we always keep these lists sorted we have a canonical representation of them and we can check equality of two units by checking equality of the nominator and denominator lists. We can implement the constructor like this:
+The idea is to have a representation of physical units and then associate these to numeric values. Physical units, here, refers to units like square kilometres, metres per second, etc. In general, these will be symbolic expressions, but we will only consider the slightly simpler situation where the units are a fraction of physical constants. In that case, we can represent these as a list of terms in the nominator and a list of terms in the denominator. If we always keep these lists sorted, we have a canonical representation of them, and we can check equality of two units by checking equality of the nominator and denominator lists. We can implement the constructor like this:
 
 ```{r}
 symbolic_unit <- function(nominator, denominator = "") {
@@ -218,7 +218,7 @@ x == y
 x != y
 ```
 
-Adding and subtracting physical quantities is only possible if they have the same units, but it is always possible to multiple and divide units. The resulting unit is then obtained by doing the same operation on the (symbolic) units as you do on the quantities. To be able to handle this, we define multiplication and division on symbolic units. 
+Adding and subtracting physical quantities is only possible if they have the same units, but it is always possible to multiply and divide units. The resulting unit is then obtained by doing the same operation on the (symbolic) units as you do on the quantities. To be able to handle this, we define multiplication and division on symbolic units. 
 
 ```{r}
 `*.symbolic_unit` <- function(x, y) {
@@ -245,7 +245,7 @@ units <- function(value, nominator, denominator = "") {
 }
 ```
 
-Pretty-printing follows the pattern we saw with `modulus`. We need to strip the class and attributes in order to use the underlying print method, called through `NextMethod`, but that is all there is to it.
+Pretty-printing follows the pattern we saw with `modulus`. We need to strip the class and attributes to use the underlying print method, called through `NextMethod`, but that is all there is to it.
 
 ```{r}
 print.units <- function(x, ...) {
@@ -259,9 +259,9 @@ print.units <- function(x, ...) {
 (x <- units(1:6, "m"))
 ```
 
-Handling operators for `units` is only slightly more involved than it was for `modulus`. We need to distinguish between operators where we require that the units match and those where we need to construct new units. The former are those are addition, subtraction, and comparisons, assuming we only want to consider numbers equal if they agree in both quantity and associated units, the latter are multiplication and division where the resulting units must be computed from the operands. It is not obvious how to handle logical operators on physical quantities, if that is something that even make sense, so for operators that do not fall into these two categories we should just default to what the underlying type does.
+Handling operators for `units` is only slightly more involved than it was for `modulus`. We need to distinguish between operators where we require that the units match and those where we need to construct new units. The former of those are addition, subtraction, and comparisons, assuming we only want to consider numbers equal if they agree in both quantity and associated units, the latter are multiplication and division where the resulting units must be computed from the operands. It is not obvious how to handle logical operators on physical quantities if that is something that even makes sense, so for operators that do not fall into these two categories, we should just default to what the underlying type does.
 
-We implement the operators using the `Ops` group function. Inside this function we can get hold of the actual operator being evaluated using the variable `.Generic`. This is not a parameter of the function but it will be set to the operator being evaluated when the function is called and we can check the operator and handle it appropriately by switching on it.
+We implement the operators using the `Ops` group function. Inside this function, we can get hold of the actual operator being evaluated using the variable `.Generic`. This is not a parameter of the function, but it will be set to the operator being evaluated when the function is called, and we can check the operator and handle it appropriately by switching on it.
 
 ```{r}
 Ops.units <- function(e1, e2) {
