@@ -1,8 +1,8 @@
 # R6 classes
 
-The last object system we will look at is the R6 system. This system is very unlike S3 and S4, and unusual in R in general. Data is usually immutable in R and any semblance of object modification is really implemented by copying data and constructing new objects. The only thing you can modify in R is environments; you cannot modify data. The R6 system, however, uses environments to give us objects we can modify. Unusual in R, but the semantics is then similar to how object-orientation is implemented in most other languages, where methods modify objects rather than create new objects.
+The last object system we will look at is the R6 system. This system is very unlike S3 and S4, and unusual in R in general. Data is usually immutable in R, and any resemblance of object modification is really implemented by copying data and constructing new objects. The only thing you can modify in R is environments; you cannot modify data. The R6 system, however, uses environments to give us objects we can modify. Unusual in R, but the semantics is then similar to how object-orientation is implemented in most other languages, where methods modify objects rather than create new objects.
 
-The R6 system is a better implementation of this semantics than the built in reference class (RC) system, also known as R5, the natural name for the next object system, implemented in R, after the object systems S3 and S4, originally from the S language. Because R6 has the same semantics as R5, and is considered a better implementation of it, I will not cover R5 further.
+The R6 system is a better implementation of this semantics than the built-in reference class (RC) system, also known as R5, the natural name for the next object system, implemented in R, after the object systems S3 and S4, originally from the S language. Because R6 has the same semantics as R5 and is considered a better implementation of it, I will not cover R5 further.
 
 ## Defining classes
 
@@ -35,7 +35,7 @@ VectorStack <- R6Class("VectorStack",
 
 Here, besides the class name, we use two arguments to `R6Class`: `private` and `public`. These are used to define attributes of the class, either values stored in objects or methods we can call on the objects. For both, the arguments are lists. The names used for the list elements become the names of the attributes and the values, naturally, the attribute values.
 
-The difference between the two arguments is that attributes in the `public` list can be accessed on objects of the class anywhere you have such objects while attributes in the `private` list can only be accessed in methods you define for the class. In methods, you can access elements in the `public` list using the variable `self` and you can access attributes in the `private` list using the variable `private`. In this `VectorStack` implementation we have made the vector used for storing the stack private and we have implemented the stack interface as public methods. Inside the methods we access the elements as `private$elements`, and in `push` and `pop` we return the object itself using the variable `self`. We return this object wrapped in `invisible` so it isn't automatically printed when we call these methods, but we didn't have to. We didn't have to return an object at all for these methods, but doing so allows us to chain together method calls, as we will see below, so it is good practise.
+The difference between the two arguments is that attributes in the `public` list can be accessed anywhere while attributes in the `private` list can only be accessed in methods you define for the class. In methods, you can access elements in the `public` list using the variable `self`, and you can access attributes in the `private` list using the variable `private`. In this `VectorStack` implementation we have made the vector used for storing the stack private, and we have implemented the stack interface as public methods. Inside the methods we access the elements as `private$elements`, and in `push` and `pop` we return the object itself using the variable `self`. We return this object wrapped in `invisible`, so it isn't automatically printed when we call these methods, but we didn't have to. We didn't have to return an object at all for these methods, but doing so allows us to chain together method calls, as we will see below, so it is good practice.
 
 Notice that the `self` and `private` objects are not arguments to the methods. They just exist in the namespace of the functions as part of the magic R6 uses to implement its mutable object semantics.
 
@@ -106,11 +106,11 @@ while (!stack$is_empty()) stack$pop()
 stack
 ```
 
-The chained call to `push` here is possible because the `push` method returns the object itself. Unlike the previous implementations where `push` returns a new object, for the R6 object, the existing object is modified. We do not need to assign the result of the three `push` calls back to `stack` and we do not need to assign the calls to `pop` back to `stack` either. Returning the object itself in these functions allows us to chain method calls, but that is all this does. The R6 object is not immutable.
+The chained call to `push` here is possible because the `push` method returns the object itself. Unlike the previous implementations where `push` returns a new object, for the R6 object, the existing object is modified. We do not need to assign the result of the three `push` calls back to `stack`, and we do not need to assign the calls to `pop` back to `stack` either. Returning the object itself in these functions allows us to chain method calls, but that is all this does. The R6 object is not immutable.
 
 ### Object initialisation
 
-If we want to set attributes of objects when constructing them, we need to do a little more work than in S4. We cannot simply use named arguments in the constructor; this call would give us an error:
+If we want to set attributes of objects when constructing them, we need to do a little more work than in S4. We cannot just use named arguments in the constructor; this call would give us an error:
 
 ```r
 stack <- VectorStack$new(elements = 1:4)
@@ -166,7 +166,7 @@ With this initialisation function we can now construct objects with `elements` i
 
 ### Private and public attributes
 
-The elements in the stack are private so we cannot access them the same way we can the public methods. You might hope that `stack$elements` would then give you an error, but unfortunately not.
+The elements in the stack are private, so we cannot access them the same way we can the public methods. You might hope that `stack$elements` would then give you an error, but unfortunately not.
 
 ```{r}
 stack$elements
@@ -184,7 +184,7 @@ We can see the difference between private and public attributes with this little
 A <- R6Class("A", public = list(x = 5), private = list(y = 13))
 ```
 
-With this defintion of class `A` we should be able to access object's `x` attributes, and we can:
+With this definition of class `A`, we should be able to access object's `x` attributes, and we can:
 
 ```{r}
 a <- A$new()
@@ -207,23 +207,23 @@ In general, you cannot create new attributes to R6 objects just by assigning to 
 a$z <- "foo"
 ```
 
-You can modify public data attributes, as we saw above for `x`, but don't try to be clever and modify methods. It is really bad practise to change methods for a single object to begin with, but luckily it is also "verboten" in R6 and you will get you an error.
+You can modify public data attributes, as we saw above for `x`, but don't try to be clever and modify methods. It is really bad practise to change methods for a single object, to begin with, but luckily it is also "verboten" in R6, and you will get you an error.
 
 ```{r}
 stack$pop <- NULL
 ```
 
-In general, it is considered good practise to keep data private and methods that are part of a class interface public. There are several reasons for this: If data is only modified through a class' methods then you have more control over the state of objects and can ensure that an object is always in a valid state before and after all method calls, but, perhaps more importantly, keeping the representation of objects hidden away limits the dependency between a class and code that uses the class. If any code can access the inner workings of objects there is a good chance that eventually a lot of code will. This means that you will have to modify all the uses of a class if you change how objects of the class are represented. If, on the other hand, code only accesses objects through a public interface, then you can modify all the private attributes as much as you want as long as you keep the public interface unchanged. You will of course have to modify some of the class' methods, but changes will be limited to that.
+In general, it is considered good practice to keep data private and methods that are part of a class interface public. There are several reasons for this: If data is only modified through a class' methods then you have more control over the state of objects and can ensure that an object is always in a valid state before and after all method calls, but, perhaps more importantly, keeping the representation of objects hidden away limits the dependency between a class and code that uses the class. If any code can access the inner workings of objects, there is a good chance that eventually a lot of code will. This means that you will have to modify all the uses of a class if you change how objects of the class are represented. If on the other hand, the code only accesses objects through a public interface, then you can modify all the private attributes as much as you want as long as you keep the public interface unchanged. You will, of course, have to modify some of the class' methods, but changes will be limited to that.
 
 In the R6 system, private attributes can be accessed only by methods you define for the class or in methods defined in sub-classes. If you are used to languages such as C++ or Java, this might surprise you, but the private attributes in R6 are similar to the protected attributes in those languages and not the private attributes.
 
 ### Active bindings
 
-There is a way of getting the syntax of accessing data attributes without actually doing so. If you have code that already uses a public attribute and you want to change that into a function to hide or modify implementation details you can use this, or if you just like the syntax for data better than method calls.
+There is a way of getting the syntax of accessing data attributes without actually doing so. If you have code that already uses a public attribute and you want to change that into a function to hide or modify implementation details, you can use this, or if you just like the syntax for data better than method calls.
 
-This is achieved through the `active` argument to `R6Class`. Here you can provide a list of attributes, as for `private` and `public`, but these attributes should be functions and they will define a value-like syntax for calling the functions.
+This is achieved through the `active` argument to `R6Class`. Here you can provide a list of attributes, as for `private` and `public`, but these attributes should be functions, and they will define a value-like syntax for calling the functions.
 
-As an example we can take the elements in the vector stack. We want to be able to write `stack$elements` but we do not want to make the elements public. So we write a function for `elements` and add it to `active`. We cannot have the same name used both in `private` and `active` (or in `public` for that matter), so we have to change the name for the private data attribute first, and of course update all the existing methods. After doing that, we can add the `active` function like this:
+As an example, we can take the elements in the vector stack. We want to be able to write `stack$elements`, but we do not want to make the elements public. So we write a function for `elements` and add it to `active`. We cannot have the same name used both in `private` and `active` (or in `public` for that matter), so we have to change the name for the private data attribute first, and of course update all the existing methods. After doing that, we can add the `active` function like this:
 
 ```{r, echo=FALSE}
 VectorStack <- R6Class("VectorStack",
@@ -294,7 +294,7 @@ You can use these `active` functions to modify values you assign, to ensure obje
 
 ## Inheritance
 
-The way we specify class hierarchies, and the way method-calls are dispatched to the most specialised implementation of a method, is fairly straightforward. We can take the example with three classes we have seen two times earlier and implement it in R6. To specify that one class inherits from another we use the `inherit` argument to `R6Class` and to write more specialised version of a method we simply add the method to the `public` or `private` lists. Overall, writing methods and class hierarchies is done with much simpler code in R6 than in both S3 and S4.
+The way we specify class hierarchies, and the way method-calls are dispatched to the most specialised implementation of a method, is relatively straightforward. We can take the example of three classes we have seen two times earlier and implement it in R6. To specify that one class inherits from another we use the `inherit` argument to `R6Class` and to write a more specialised version of a method we simply add the method to the `public` or `private` lists. Overall, writing methods and class hierarchies is done with much simpler code in R6 than in both S3 and S4.
 
 ```{r}
 A <- R6Class("A",
@@ -350,7 +350,7 @@ There should not be any surprises in how inheritance and method dispatching work
 
 ## References to objects and object sharing
 
-One important thing is different from R6 objects and all other R objects: the R6 objects have a state that can be modified. If you are used to other object-oriented programming languages this might not sound like much of a deal, but in general we can assume that calling functions do not have side-effects in R except for changing values that variables point to. When objects can suddenly change state, we need to worry about when two references are to the same object or merely references to two objects that represent the same values.
+One important thing is different from R6 objects and all other R objects: the R6 objects have a state that can be modified. If you are used to other object-oriented programming languages, this might not sound like much of a deal, but in general, we can assume that calling functions do not have side-effects in R, except for changing values that variables point to. When objects can suddenly change state, we need to worry about when two references are to the same object or merely references to two objects that represent the same values.
 
 The first thing you need to know is that values set in the definition of `private` and `public` lists are shared between objects of a class. To see this in action we can define these two classes:
 
@@ -370,7 +370,7 @@ x <- B$new()
 y <- B$new()
 ```
 
-We can first check the behaviour of the vector in the objects. It is initialled to the first five natural numbers so that is what both objects contain initially.
+We can first check the behaviour of the vector in the objects. It is initialled to the first five natural numbers, so that is what both objects contain initially.
 
 ```{r}
 x$x
@@ -413,7 +413,7 @@ x$x <- 1:5
 w$x
 ```
 
-If you want objects of a class to contain distinct objects of an R6 class then you can create the objects in the `initialise` function instead of in the `public` or `private` lists. This function is called whenever you create a new object and contained objects that are created in the initialisation function will be distinct and thus not shared.
+If you want each object of a class to contain distinct objects of an R6 class, then you can create the objects in the `initialize` function instead of in the `public` or `private` lists. This function is called whenever you create a new object and objects that are created in the initialisation function will be distinct and thus not shared.
 
 We can modify `B` like this:
 
@@ -454,7 +454,7 @@ z$x <- 1:2
 x$x
 ```
 
-The default cloning is shallow, however. It makes a copy of the object, but if the object contains a references to an R6 class then the clone will contain a reference to the same object. If we modify the `a` attribute of `z` we will also modify the `a` attribute of `x`.
+The default cloning is shallow, however. It makes a copy of the object, but if the object contains a reference to an R6 class, then the clone will contain a reference to the same object. If we modify the `a` attribute of `z`, we will also modify the `a` attribute of `x`.
 
 ```{r}
 x$a$x
@@ -538,7 +538,7 @@ Ops.modulus <- function(e1, e2) {
 }
 ```
 
-The implementation is slightly different from the S3 version, because the data in the objects are represented differently, but the general control-flow is the same, and with this definition we have modulus arithmetic.
+The implementation is slightly different from the S3 version, because the data in the objects are represented differently, but the general control flow is the same, and with this definition we have modulus arithmetic.
 
 ```{r}
 x + 1:6
@@ -546,7 +546,7 @@ x + 1:6
 2 * x
 ```
 
-If you make sub-classes of an R6 class like `modulus` you will get a `class` attribute that also reflects this, so the S3 dispatch mechanism will also work for sub-classes in the R6 system.
+If you make subclasses of an R6 class like `modulus` you will get a `class` attribute that also reflects this, so the S3 dispatch mechanism will also work for sub-classes in the R6 system.
 
 ```{r}
 modulus2 <- R6Class("modulus2", inherit = modulus)
