@@ -365,6 +365,36 @@ pop(stack)
 It is not much of a safety check for the correct implementation of an interface, and I usually don't see much use for it, but it is there if you want it.
 
 
+## Constructors
+
+You can provide values for slots when you create objects by providing them as named arguments, but you can also get more control over object initialisation through the method `initialize`. This method works as a constructor, except that it doesn't create an object, it just is responsible for setting attributes to leave it in a consistent state. If you define this function, it replaces the default constructor, and you are in charge of which arguments the constructor should take, how it should set slots, and whether it should call the constructor of its superclass.
+
+A very simple example, where we have one superclass and one subclass, is shown below:
+
+```{r}
+A <- setClass("A", slots = list(x = "numeric", y = "numeric"))
+B <- setClass("B", contains = "A", slots = list(z = "numeric"))
+
+setMethod("initialize", signature = "A",
+          definition = function(.Object, x, y) {
+            print("A initialize")
+            .Object@x <- x
+            .Object@y <- y
+            .Object
+          })
+
+setMethod("initialize", signature = "B",
+          definition = function(.Object, z) {
+            .Object <- callNextMethod(.Object, x = z, y = z)
+            .Object@z <- z
+            .Object
+          })
+
+(a <- A(x = 1:3, y = 4:6))
+(b <- B(z = 6:9))
+```
+
+
 ## Dispatching on type-signatures
 
 The signatures we have used so far when defining specialised methods consisted of just a class name. If we use them this way, S4 methods work just as S3 generic functions, but the dispatch mechanism for S4 methods is more general than this and it is possible to dispatch based on the type of all a function's arguments.
