@@ -1,23 +1,23 @@
 # S4 classes
 
-The S3 class system is the wild west of object-oriented programming. Class hierarchies only exist implicitly through the `class` attributes, generic methods can be implemented or not by any class whatsoever with no check that interfaces and class hierarchy designs are implemented correctly. Everything depends on conventions and it is entirely up to the programmer to ensure any resemblance of consistency.
+The S3 class system is the wild west of object-oriented programming. Class hierarchies only exist implicitly through the `class` attributes, generic methods can be implemented or not by any class whatsoever, with no check that interfaces and class hierarchy designs are implemented correctly. Everything depends on conventions and it is entirely up to the programmer to ensure any resemblance of consistency.
 
-The S3 system is popular because it is very easy to use and to write new classes. In most cases we would prefer simplicity over elaborate design, and in those cases S3 is perfect for our needs. When we implement a new statistical model we rarely need a complex class hierarchy. Most abstract data structures have only few associated operations and we have no problem remembering to implement them all when we write concrete versions of them. Once software reaches a certain level of complexity, however, more structure is needed. Rather than having the design exist only implicitly in programming conventions we want it explicitly stated in the code.
+The S3 system is popular because it is very easy to use and to write new classes. In most cases, we would prefer simplicity over elaborate design, and in those cases, S3 is perfect for our needs. When we implement a new statistical model, we rarely need a complex class hierarchy. Most abstract data structures have only a few associated operations, and we have no problem remembering to implement them all when we write concrete versions of them. Once software reaches a certain level of complexity, however, more structure is needed. Rather than having the design exist only implicitly in programming conventions we want it explicitly stated in the code.
 
 The S4 system provides a more structured object-oriented system. Here classes and class hierarchies are explicitly created; they are not merely strings in a `class` attribute. To obtain the added structure that S4 gives a little more code is needed when creating classes and methods, but overall the system works very similar to S3 so if you are comfortable with S3 then learning S4 should not pose a problem.
 
 ## Defining S4 classes
 
-In S4, classes are explicitly created. To create a new class we use the function `setClass` from the `methods` package. This function takes list of arguments that specify which attributes objects of the class should hold, what default values the attributes should have, how the class fits into a class hierarchy, and a number of other properties, but all these properties have default values so we can create a new class just by specifying its name.
+In S4, classes are explicitly created. To create a new class, we use the function `setClass` from the `methods` package. This function takes arguments that specify which attributes objects of the class should hold, what default values the attributes should have, how the class fits into a class hierarchy, and many other properties of the created class. All these properties have default values so we can create a new class just by specifying its name.
 
-As an example we consider the stack data structure we implemented in S3 earlier. To make an abstract stack class we can write:
+As an example, we consider the stack data structure we implemented in S3 earlier. To make an abstract stack class we can write:
 
 ```{r}
 library(methods)
 Stack <- setClass("Stack")
 ```
 
-This create a new class called `"Stack"`. We have not specified any attributes of the class so S4 will assume that it is an abstract class that is not supposed to be instantiated and we will get an error if we try.
+This creates a new class called `"Stack"`. We have not specified any attributes of the class, so S4 will assume that it is an abstract class that is not supposed to be instantiated and we will get an error if we try.
 
 We can create the vector-based stack class like this:
 
@@ -29,9 +29,9 @@ VectorStack <- setClass("VectorStack",
                         contains = "Stack")
 ```
 
-Here we use two arguments to `setClass`: `slots` and `contains`. The `slots` argument is a list of attributes that objects of the class should have. Here specify that it should contain a vector called `elements`. The `contains` argument specifies which super-classes the new class should have. We make `VectorStack` a sub-class of `Stack`.
+Here we use two arguments to `setClass`: `slots` and `contains`. The `slots` argument is a list of attributes that objects of the class should have. Here specify that it should contain a vector called `elements`. The `contains` argument specifies which superclasses the new class should have. We make `VectorStack` a subclass of `Stack`.
 
-Since `VectorStack` has slots it is not considered an abstract class (we can explicitly make it so by adding `"VIRTUAL"` to the `contains` argument, but we do want to be able to instantiate it). We can create objects of the class by calling `VectorStack`
+Since `VectorStack` has slots, it is not considered an abstract class (we can explicitly make it so by adding `"VIRTUAL"` to the `contains` argument, but we do want to be able to instantiate it). We can create objects of the class by calling `VectorStack'
 
 ```{r}
 (vs <- VectorStack())
@@ -53,7 +53,7 @@ vs@elements
 
 In general, `@` is used to access slots of S4 objects.
 
-Capturing the result of `setClass` and using it as a function to construct objects is my preferred way of creating S4 constructors, but strictly speaking it isn't necessary. Once a class is created with `setClass` you can create objects just using the name of the class using the function `new`.
+Capturing the result of `setClass` and using it as a function to construct objects is my preferred way of creating S4 constructors, but strictly speaking, it isn't necessary. Once a class is built with `setClass` you can create objects just using the name of the class using the function `new`.
 
 ```{r}
 new("VectorStack", elements = 1:4)
@@ -61,7 +61,7 @@ new("VectorStack", elements = 1:4)
 
 ## Generic functions
 
-In the S3 system we create generic functions just as normal functions that call `UseMethod`. In S4 we have to explicitly create generic functions using the `setGeneric` function. The first argument of `setGeneric` is the name of the generic function. If you have an existing function that you want to make generic, calling `setGeneric` with its name will create a generic function with the existing function as the default implementation. Typically, though, we use `setGeneric` to create a brand new generic function and in that case we need to provide a definition of the function as well. This we do through the parameter `def`. This function plays the role the function definition in S3 has: it should simply call the function `standardGeneric`, which is S4's analogue to `UseMethod`.
+In the S3 system, we create generic functions just as normal functions that call `UseMethod`. In S4 we have to define generic functions explicitly using the `setGeneric` function. The first argument of `setGeneric` is the name of the generic function. If you have an existing function that you want to make generic, calling `setGeneric` with its name will create a generic function with the existing function as the default implementation. Typically, though, we use `setGeneric` to create a brand new generic function, and in that case, we need to provide a definition of the function as well. This we do through the parameter `def`. This function plays the role the function definition in S3 has: it should simply call the function `standardGeneric`, which is S4's analogue to `UseMethod`.
 
 We can define the interface of the stack abstract data structure like this:
 
@@ -78,7 +78,7 @@ setGeneric("is_empty",
 
 To provide implementations of generic functions we use the function `setMethod`. We need to provide the name of the generic function, the signature of the method (which is the type(s) used for dispatching the method), and the definition of the function.
 
-When a generic function is called, the concrete implementation is chosen based on the type of the arguments to the function. This is what we call dynamic dispatch and in S3 it is based on a single argument -- typically the first -- but in S4 we can dispatch based on more complex type information. To get behaviour similar to S3 we just provide a signature that is a class name. This, then, makes S4 choose a given implementation based on the class of the first argument to the generic function.
+When a generic function is called, the concrete implementation is chosen based on the type of the arguments to the function. This is what we call dynamic dispatch, and in S3 it is based on a single argument---typically the first---but in S4 we can dispatch based on more complex type information. To get behaviour similar to S3 we just provide a signature that is a class name. This, then, makes S4 choose a given implementation based on the class of the first argument to the generic function.
 
 We can implement the vector stack thus:
 
@@ -97,7 +97,7 @@ setMethod("is_empty", signature = "VectorStack",
           definition = function(stack) length(stack@elements) == 0)
 ```
 
-The implementations are just variations of the functions we defined in the S3 implementation and we can use the class just as as before.
+The implementations are just variations of the functions we defined in the S3 implementation, and we can use the class just as before.
 
 ```{r}
 stack <- VectorStack()
@@ -155,19 +155,19 @@ which, of course, doesn't prevent us from specifying other values as arguments w
 
 ### Object validity
 
-The type we give slots when we specify them puts type constraints on objects. When we declared that the `n` slot in `NaturalNumber` should be an integer we constrained the values we can assign to that slot. If we try to assign a `numeric` instead we will get an error.
+The type we give slots when we specify them puts type constraints on objects. When we declared that the `n` slot in `NaturalNumber` should be an integer we constrained the values we can assign to that slot. If we try to assign a `numeric` instead, we will get an error.
 
 ```{r}
 n@n <- 1.2
 ```
 
-For natural numbers we do not want negative integers to be included, but since negative integers are still integers, there is no constraint to assigning such a value.
+For natural numbers, we do not want negative integers to be included, but since negative integers are still integers, there is no constraint to assigning such a value.
 
 ```{r}
 n@n <- as.integer(-1)
 ```
 
-We can put further constraints on objects via the `validity` argument to `setClass`. This argument should be a function that tests if an object is valid. If it is, it should return `TRUE`, otherwise it should return `FALSE`.
+We can put further constraints on objects via the `validity` argument to `setClass`. This argument should be a function that tests if an object is valid. If it is, it should return `TRUE`. Otherwise, it should return `FALSE`.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 NaturalNumber <- setClass("NaturalNumber",
@@ -230,7 +230,7 @@ f(y)
 f(z)
 ```
 
-If we define another function, `g`, that we implement for both `A` and `B`, then calling it on `x` will call the `A` version while calling it on `y` and `z` will invoke the `B` version since this is the most specialised form of the function for those two classes.
+If we define another function, `g`, that we implement for both `A` and `B`, then calling it on `x` will call the `A` version. Calling it on `y` and `z` will invoke the `B` version since this is the most specialised form of the function for those two classes.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setGeneric("g", def = function(x) standardGeneric("g"))
@@ -330,17 +330,17 @@ d(z)
 
 ### Requiring methods
 
-The abstract class `Stack` we defined earlier didn't serve any purpose. It is an abstract class with no associated data or functions. All of the stack interface was implemented in `VectorStack` and we didn't gain anything from inheriting from `Stack`. In S4, however, we can formalise interfaces such as stacks and ensure that implementations of an interface actually implements all the functions in the interface.
+The abstract class `Stack` we defined earlier didn't serve any purpose. It is an abstract class with no associated data or functions. All functions in the stack interface were implemented in `VectorStack`, and we didn't gain anything from inheriting from `Stack`. In S4, however, we can formalise interfaces such as stacks and ensure that implementations of an interface actually implements all the functions in the interface.
 
-It's not much. There is very little type checking in R and you won't get much assistance from S4 either, but there is a way of at least making the error messages more informative when you invoke a generic function that hasn't been implemented.
+It's not much. There is very little type checking in R, and you won't get much assistance from S4 either, but there is a way of at least making the error messages more informative when you invoke a generic function that hasn't been implemented.
 
-Let's implement a non-functioning stack. We can make this class for the list-based stack. It inherits from `Stack` but it doesn't add any slots or any functionality.
+Let's implement a non-functioning stack. We can make this class for the list-based stack. It inherits from `Stack`, but it doesn't add any slots or any functionality.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 ListStack <- setClass("ListStack", contains = "Stack")
 ```
 
-Even without an implementation we can create an object of type `ListStack`. The `Stack` class is abstract, because we didn't add any slots to it, but the `ListStack` is not interpreted as abstract, even though it doesn't add any slots either, because it `contains` a super-class. If we call `pop` on a `ListStack`, however, we get an error, and rightly so.
+Even without an implementation, we can create an object of type `ListStack`. The `Stack` class is abstract because we didn't add any slots to it, but the `ListStack` is not interpreted as abstract, even though it doesn't add any slots either because it `contains` a superclass. If we call `pop` on a `ListStack`, however, we get an error, and rightly so.
 
 ```{r}
 stack <- ListStack()
@@ -362,12 +362,12 @@ By doing this we ensure that calling any of these methods on `ListStack` will gi
 pop(stack)
 ```
 
-It is not much of a safety check for the correct implementation of an interface, and I usually don't see much use for it, but it is there if you need it.
+It is not much of a safety check for the correct implementation of an interface, and I usually don't see much use for it, but it is there if you want it.
 
 
 ## Dispatching on type-signatures
 
-The signatures we have used so far when defining specialised methods consisted of just a class name. Used this way, S4 methods work just as S3 generic functions, but the dispatch mechanism for S4 methods is more general than this and it is possible to dispatch based on the type of all a function's arguments.
+The signatures we have used so far when defining specialised methods consisted of just a class name. If we use them this way, S4 methods work just as S3 generic functions, but the dispatch mechanism for S4 methods is more general than this and it is possible to dispatch based on the type of all a function's arguments.
 
 For example, we can define a function `f` of two arguments and refine it in different ways based on the type of the two arguments. Say, have one version when the arguments are numeric and another when they are logical.
 
@@ -386,7 +386,7 @@ f(2, 3)
 f(TRUE, FALSE)
 ```
 
-The type matching goes from most specific to most abstract, following class hierarchies for classes and would match integer over numeric over complex for numerical values. So, if we define a version of `f` that matches integers for the first value it will call that one when we give it an integer and the version defined above when we call it with `numeric` values.
+The type matching goes from most specific to most abstract, following class hierarchies for classes and would match integer over numeric over complex for numerical values. So, if we define a version of `f` that matches integers for the first value, it will call that one when we give it an integer and the version defined above when we call it with `numeric` values.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("f", signature = c("integer", "complex"),
@@ -485,7 +485,7 @@ The `show` method we implemented here is the S4 equivalent of `print` and we use
 
 If we then want to implement a single operator we can specialise the method for it, just as we did with generic functions for S3, but we can use the signature type matching to capture different combinations of arguments instead of writing type-checking code at the beginning of the generic function as we had to for S3.
 
-Below we handle the three cases we want for modulus arithmetic, the case where both operands are `modulus` objects and the two cases where one of them is a `modulus` object and the other is `numeric`.
+Below we handle the three cases we want for modulus arithmetic: the case where both operands are `modulus` objects and the two cases where one of them is a `modulus` object and the other is `numeric`.
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("+", signature = c("modulus", "modulus"),
@@ -522,7 +522,7 @@ y <- modulus(value = 1:6, n = 3)
 x + y
 ```
 
-We also have function group solutions in S4, and for defining arithmetic operations we need the group `Arith`. This works much as the `Ops` generic function in S3 except that we, again, can use type matching instead of explicitly checking the type of the arguments inside the function(s).
+We also have function group solutions in S4, and for defining arithmetic operations, we need the group `Arith`. This works much as the `Ops` generic function in S3 except that we, again, can use type matching instead of explicitly checking the type of the arguments inside the function(s).
 
 ```{r, message=FALSE, warning=FALSE, results="hide"}
 setMethod("Arith", 
@@ -553,7 +553,7 @@ x * y
 
 ## Combining S3 and S4 classes
 
-You can, to a limited degree, combine S3 and S4. The two systems are different and trying to write software that combine S3 and S4 class hierarchies intimately is not something I will recommend. It only leads to weeping and gnashing of teeth. But if you have existing S3 code and you want to write an extension in S4 you can do this.
+You can, to a limited degree, combine S3 and S4. The two systems are different and trying to write software that connects S3 and S4 class-hierarchies intimately is not something I will recommend. It only leads to weeping and gnashing of teeth. But if you have existing S3 code and you want to write an extension in S4 you can do this.
 
 Let's say we have an S3 class, `X`, with generic functions `foo` and `bar`.
 
@@ -572,7 +572,7 @@ foo(x)
 bar(x)
 ```
 
-If we want to write a sub-class of `X`, let's call it `Y`, and we want to write `Y` in S4, we cannot simply use `X` in the `contains` option to `setClass`. Well, you can, but if you try to instantiate objects of the class you will get an error. The S4 system doesn't know about any class called `X` so we first have to make it aware of it. We can do that using the function `setOldClass`.
+If we want to write a subclass of `X`, let's call it `Y`, and we want to write `Y` in S4, we cannot use `X` in the `contains` option to `setClass`. Well, you can, but if you try to instantiate objects of the class you will get an error. The S4 system doesn't know about any class called `X` so we first have to make it aware of it. We can do that using the function `setOldClass`.
 
 ```{r}
 setOldClass("X")
@@ -600,7 +600,7 @@ foo(y)
 
 Of course, this would be the S3 of refining generic functions and since we are working with an S4 class now it is better to use `setMethod`.
 
-Similar to `foo`, calling `bar` invokes `bar.X`. In this case resulting in an error because, even though S4 knows about the `X` class it doesn't know about the constructor function or the representation of `X` objects it create.
+Similar to `foo`, calling `bar` invokes `bar.X`. In this case resulting in an error because, even though S4 knows about the `X` class, it doesn't know about the constructor function or the representation of `X` objects it create.
 
 ```{r}
 bar(y)
@@ -619,4 +619,4 @@ y <- Y(x = 13)
 bar(y)
 ```
 
-I don't recommend mixing S3 and S4. If you have code written using the S3 system you are probably better off sticking with S3 rather than trying to mix the two systems, but if you are writing code using S4 and need to include a little functionality from S3 classes, this is the way to do it.
+I don't recommend mixing S3 and S4. If you have code written using the S3 system you are probably better off sticking with S3 rather than trying to combine the two systems, but if you are writing code using S4 and need to include a little functionality from S3 classes, this is the way to do it.
